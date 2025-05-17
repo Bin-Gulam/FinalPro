@@ -1,19 +1,62 @@
 from rest_framework import serializers
-from .models import CustomUser
-from django.contrib.auth.hashers import make_password
+from .models import *
 
-class RegisterSerializer(serializers.ModelSerializer):
+
+# ================
+# User serializer
+# ================
+
+class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['username', 'name', 'email', 'password']
-        extra_kwargs = {'password': {'write_only': True}}
+        fields = ['id', 'username', 'email', 'name']  
 
-    def create(self, validated_data):
-        validated_data['password'] = make_password(validated_data['password'])
-        return super().create(validated_data)
+# class ApplicantSerializer(serializers.ModelSerializer):
+#     user = serializers.SlugRelatedField(slug_field='username',queryset=CustomUser.objects.all())
+#     class Meta:
+#         model =Applicant
+#         fields = '__all__'
 
 
-class UserSerializer(serializers.ModelSerializer):
+class ApplicantSerializer(serializers.ModelSerializer):
+    sheha = serializers.SlugRelatedField(slug_field='name',queryset=Sheha.objects.all())
     class Meta:
-        model = CustomUser
-        fields = ['id', 'username']
+        model = Applicant
+        fields = '__all__'
+
+class BusinessSerializer(serializers.ModelSerializer):
+    applicant_name = serializers.CharField(source='applicant.name', read_only=True)
+
+    class Meta:
+        model = Business
+        fields = '__all__'
+
+class ShehaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Sheha
+        fields = '__all__'
+
+class LoanOfficerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LoanOfficer
+        fields = '__all__'
+
+class LoanSerializer(serializers.ModelSerializer):
+    business_name = serializers.CharField(source='business.name', read_only=True)
+    loan_officer_name = serializers.CharField(source='loan_officer.name', read_only=True)
+
+    class Meta:
+        model = Loan
+        fields = ['Loan_ID', 'amount', 'duration', 'status', 'application_date', 'approval_date', 'business', 'business_name', 'loan_officer', 'loan_officer_name']
+
+    def validate_amount(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Amount must be greater than zero.")
+        return value
+
+class RepaymentSerializer(serializers.ModelSerializer):
+    business_name = serializers.CharField(source='business.name', read_only=True)
+
+    class Meta:
+        model = Repayment
+        fields = ['Repayment_ID', 'amount', 'time', 'day', 'date', 'business', 'business_name']

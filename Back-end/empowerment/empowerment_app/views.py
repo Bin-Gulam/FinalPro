@@ -1,81 +1,52 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
-from rest_framework import status
-from django.contrib.auth import authenticate, login, logout
-from empowerment_app.serializer import RegisterSerializer, UserSerializer
+from empowerment_app.models import *
+from empowerment_app.serializer import *
+from .models import *
+from rest_framework.decorators import action
+from empowerment_app.filters import ApplicantFilter
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
+from .filters import ApplicantFilter  
 
-#  forgot
-from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
-from django.contrib.auth import get_user_model
-from django.template.loader import render_to_string
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status
-from django.conf import settings
+# =====================
+# CRUD functions
+# =====================
 
+class ApplicantViewSet(viewsets.ModelViewSet):
+    queryset = Applicant.objects.all()
+    serializer_class = ApplicantSerializer
+    filterset_class = ApplicantFilter  
+    permission_classes = [IsAuthenticated] 
+  
 
-class RegisterView(APIView):
-    def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def create(self, request, *args, **kwargs):
+        print("User:", request.user) 
+        print("Auth:", request.auth) 
+        return super().create(request, *args, **kwargs)
 
-# ====================================
-#  Login, Log out and resert password
-# ====================================
+    @action(detail=True, methods=['post'])
+    def verify(self, request, pk=None):
+        applicant = self.get_object()
+        applicant.is_verified = True
+        applicant.save()
+        return Response({'status': 'Applicant verified'})
+        
+class BusinessViewSet(viewsets.ModelViewSet):
+    queryset = Business.objects.all()
+    serializer_class = BusinessSerializer
+    permission_classes = [IsAuthenticated] 
 
-#  Login
+class ShehaViewSet(viewsets.ModelViewSet):
+    queryset = Sheha.objects.all()
+    serializer_class = ShehaSerializer 
 
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def login_view(request):
-    username = request.data.get('username')
-    password = request.data.get('password')
-    user = authenticate(request, username=username, password=password)
-    if user is not None:
-        login(request, user)
-        serializer = UserSerializer(user)
-        return Response({'message': 'Login successful', 'user': serializer.data})
-    return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+class LoanViewSet(viewsets.ModelViewSet):
+    queryset = Loan.objects.all()
+    serializer_class = LoanSerializer
 
-#  Log out
+class LoanOfficerViewSet(viewsets.ModelViewSet):
+    queryset = LoanOfficer.objects.all()
+    serializer_class = LoanOfficerSerializer
 
-@api_view(['POST'])
-def logout_view(request):
-    logout(request)
-    return Response({'message': 'Logged out successfully'})
-
-#  Resert Password
-
-@api_view(['POST'])
-def reset_password(request):
-    uid = request.data.get('uid')
-    token = request.data.get('token')
-    password = request.data.get('password')
-    try:
-        user = User.objects.get(pk=uid)
-        if default_token_generator.check_token(user, token):
-            user.set_password(password)
-            user.save()
-            return Response({'message': 'Password reset successfully'})
-        else:
-            return Response({'error': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
-    except User.DoesNotExist:
-        return Response({'error': 'Invalid user'}, status=status.HTTP_400_BAD_REQUEST)
-    
-
-#  Forgot Password
-
-@api_view(['POST'])
-def forgot_password(request):
-    email = request.data.get('email')
-    if not email:
-        return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
-    
-    # For now, just return a dummy response to test
-    return Response({'message': 'Reset link sent if email exists'})
+class RepaymentViewSet(viewsets.ModelViewSet):
+    queryset = Repayment.objects.all()
+    serializer_class = RepaymentSerializer
