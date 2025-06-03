@@ -4,14 +4,18 @@ import { PencilSquareIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/solid
 
 export default function ShehaManager() {
   const [shehas, setShehas] = useState([]);
-  const [formData, setFormData] = useState({
-    name: '',
-    age: '',
-    gender: '',
-    ward: '',
-    phone: '',
-    email: '',
-  });
+ const [formData, setFormData] = useState({
+  name: '',
+  age: '',
+  gender: '',
+  ward: '',
+  phone: '',
+  email: '',
+  username: '',
+  password: '',
+ 
+});
+
   const [editingId, setEditingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
@@ -19,16 +23,20 @@ export default function ShehaManager() {
 
   const API_BASE = `${process.env.REACT_APP_API_URL}/shehas/`;
 
+  // Helper function to get Authorization headers with JWT token
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   // Fetch shehas
   const fetchShehas = useCallback(async () => {
     try {
-      const res = await axios.get(API_BASE);
+      const res = await axios.get(API_BASE, {
+        headers: getAuthHeaders(),
+      });
       console.log('API response data:', res.data);
-
-      const data = Array.isArray(res.data)
-        ? res.data
-        : res.data.results || [];
-
+      const data = Array.isArray(res.data) ? res.data : res.data.results || [];
       setShehas(data);
       setStatusMessage(data.length ? null : 'No Shehas found.');
       setErrorMessage(null);
@@ -36,7 +44,7 @@ export default function ShehaManager() {
       console.error('Error fetching Shehas:', error);
       setShehas([]);
       setStatusMessage(null);
-      setErrorMessage('Failed to fetch Shehas.');
+      setErrorMessage('Failed to fetch Shehas. Please login.');
     }
   }, [API_BASE]);
 
@@ -52,28 +60,30 @@ export default function ShehaManager() {
     e.preventDefault();
     setStatusMessage(null);
     setErrorMessage(null);
-
     console.log('Submitting form data:', formData, 'Editing ID:', editingId);
-
     try {
       if (editingId) {
-        // Use Sheha_ID in URL
-        const res = await axios.put(`${API_BASE}${editingId}/`, formData);
+        // Update existing Sheha
+        const res = await axios.put(`${API_BASE}${editingId}/`, formData, {
+          headers: getAuthHeaders(),
+        });
         console.log('Update response:', res.data);
         setStatusMessage('Sheha updated successfully.');
       } else {
-        const res = await axios.post(API_BASE, formData);
+        // Create new Sheha
+        const res = await axios.post(API_BASE, formData, {
+          headers: getAuthHeaders(),
+        });
         console.log('Create response:', res.data);
         setStatusMessage('Sheha created successfully.');
       }
-
-      setFormData({ name: '', age: '', gender: '', ward: '', phone: '', email: '' });
+      setFormData({ name: '', age: '', gender: '', ward: '', phone: '', email: '', username:'', password: ''});
       setEditingId(null);
       setShowForm(false);
       fetchShehas();
     } catch (error) {
       console.error('Error submitting form:', error.response?.data || error.message);
-      setErrorMessage('Failed to submit form. Please check the fields.');
+      setErrorMessage('Failed to submit form. Please check the fields and your login status.');
     }
   };
 
@@ -86,8 +96,11 @@ export default function ShehaManager() {
       ward: sheha.ward || '',
       phone: sheha.phone || '',
       email: sheha.email || '',
+      username: sheha.username || '',
+      password: sheha.password || '',
+     
     });
-    setEditingId(sheha.Sheha_ID);
+    setEditingId(sheha.id);
     setShowForm(true);
     setStatusMessage(null);
     setErrorMessage(null);
@@ -98,17 +111,18 @@ export default function ShehaManager() {
       alert('Invalid Sheha ID for delete!');
       return;
     }
-
     if (window.confirm('Are you sure you want to delete this Sheha?')) {
       try {
         console.log('Deleting sheha ID:', id);
-        await axios.delete(`${API_BASE}${id}/`);
+        await axios.delete(`${API_BASE}${id}/`, {
+          headers: getAuthHeaders(),
+        });
         setStatusMessage('Sheha deleted successfully.');
         setErrorMessage(null);
         fetchShehas();
       } catch (error) {
         console.error('Delete error:', error.response?.data || error.message);
-        setErrorMessage('Failed to delete Sheha.');
+        setErrorMessage('Failed to delete Sheha. Please check your login status.');
         setStatusMessage(null);
       }
     }
@@ -125,7 +139,7 @@ export default function ShehaManager() {
         <button
           onClick={() => {
             setShowForm(!showForm);
-            setFormData({ name: '', age: '', gender: '', ward: '', phone: '', email: '' });
+            setFormData({ name: '', age: '', gender: '', ward: '', phone: '', email: '', username: '', password:''});
             setEditingId(null);
             setStatusMessage(null);
             setErrorMessage(null);
@@ -139,14 +153,78 @@ export default function ShehaManager() {
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow mb-8">
           <div className="grid grid-cols-2 gap-4">
-            <input name="name" placeholder="Name" value={formData.name} onChange={handleChange} className="border p-2 rounded" required />
-            <input name="age" type="number" placeholder="Age" value={formData.age} onChange={handleChange} className="border p-2 rounded" required />
-            <input name="gender" placeholder="Gender" value={formData.gender} onChange={handleChange} className="border p-2 rounded" required />
-            <input name="ward" placeholder="Ward" value={formData.ward} onChange={handleChange} className="border p-2 rounded" required />
-            <input name="phone" placeholder="Phone" value={formData.phone} onChange={handleChange} className="border p-2 rounded" required />
-            <input name="email" type="email" placeholder="Email" value={formData.email} onChange={handleChange} className="border p-2 rounded col-span-2" required />
+            <input
+              name="name"
+              placeholder="Name"
+              value={formData.name}
+              onChange={handleChange}
+              className="border p-2 rounded"
+              required
+            />
+            <input
+              name="age"
+              type="number"
+              placeholder="Age"
+              value={formData.age}
+              onChange={handleChange}
+              className="border p-2 rounded"
+              required
+            />
+            <input
+              name="gender"
+              placeholder="Gender"
+              value={formData.gender}
+              onChange={handleChange}
+              className="border p-2 rounded"
+              required
+            />
+            <input
+              name="ward"
+              placeholder="Ward"
+              value={formData.ward}
+              onChange={handleChange}
+              className="border p-2 rounded"
+              required
+            />
+            <input
+              name="phone"
+              placeholder="Phone"
+              value={formData.phone}
+              onChange={handleChange}
+              className="border p-2 rounded"
+              required
+            />
+            <input
+            name="username"
+            placeholder="Username"
+            value={formData.username}
+            onChange={handleChange}
+            className="border p-2 rounded"
+            required
+            />
+            <input
+            name="password"
+            type="password"
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleChange}
+            className="border p-2 rounded"
+            required
+            />
+            <input
+            name="email"
+            type="email"
+            placeholder="Email"
+            value={formData.email}
+            onChange={handleChange}
+            className="border p-2 rounded col-span-2"
+            required
+            />
           </div>
-          <button type="submit" className="mt-4 flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+          <button
+            type="submit"
+            className="mt-4 flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+          >
             {editingId ? 'Update Sheha' : 'Save Sheha'}
           </button>
         </form>
@@ -165,18 +243,22 @@ export default function ShehaManager() {
                 <th className="p-2">Ward</th>
                 <th className="p-2">Phone</th>
                 <th className="p-2">Email</th>
+                <th className="p-2">Username</th>
+                <th className="p-2">Password</th>               
                 <th className="p-2">Actions</th>
               </tr>
             </thead>
             <tbody>
               {shehas.map((sheha) => (
-                <tr key={sheha.Sheha_ID}>
+                <tr key={sheha.id}>
                   <td className="p-2">{sheha.name}</td>
                   <td className="p-2">{sheha.age}</td>
                   <td className="p-2">{sheha.gender}</td>
                   <td className="p-2">{sheha.ward}</td>
                   <td className="p-2">{sheha.phone}</td>
                   <td className="p-2">{sheha.email}</td>
+                  <th className="p-2">{sheha.username}</th>
+                  <th className="p-2">{sheha.password}</th>
                   <td className="p-2 flex gap-2">
                     <button
                       onClick={() => handleEdit(sheha)}
@@ -185,7 +267,7 @@ export default function ShehaManager() {
                       <PencilSquareIcon className="h-5 w-5" />
                     </button>
                     <button
-                      onClick={() => handleDelete(sheha.Sheha_ID)}
+                      onClick={() => handleDelete(sheha.id)}
                       className="text-red-500 hover:text-red-700"
                     >
                       <TrashIcon className="h-5 w-5" />

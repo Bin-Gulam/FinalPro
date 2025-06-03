@@ -6,7 +6,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL;
 
 export function SignUp() {
   const [formData, setFormData] = useState({
-    full_name: '',
+    name: '',
     username: '',
     email: '',
     password: '',
@@ -26,18 +26,30 @@ export function SignUp() {
     e.preventDefault();
     setError('');
     setMessage('');
-
+  
     try {
-      await axios.post(`${API_BASE_URL}/register/`, formData);
-      setMessage('Account created successfully!');
+      const response = await axios.post(`${API_BASE_URL}/users/`, formData);
+  
+      // Extract and store tokens
+      const { access, refresh, user } = response.data;
+  
+      // Save tokens to localStorage (or cookies if you prefer)
+      localStorage.setItem('accessToken', access);
+      localStorage.setItem('refreshToken', refresh);
+      localStorage.setItem('user', JSON.stringify(user));
+  
+      // Optionally redirect
+      setMessage('Account created and successful!');
+      // e.g., navigate('/dashboard'); // If using useNavigate from react-router-dom
     } catch (err) {
-      setError(
-        err.response?.data?.error ||
-        err.response?.data?.detail ||
-        'Error creating account'
-      );
+      const errorData = err.response?.data;
+      const errorMessage = typeof errorData === 'string'
+        ? errorData
+        : Object.values(errorData).flat().join(' ');
+      setError(errorMessage || 'Error creating account');
     }
   };
+  
 
   return (
     <div className="flex items-center justify-center h-screen bg-gray-50 p-4">
@@ -60,11 +72,11 @@ export function SignUp() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Full Name */}
             <div>
-              <label htmlFor="full_name" className="block mb-1 font-medium">Full Name</label>
+              <label htmlFor="name" className="block mb-1 font-medium">Full Name</label>
               <input
                 type="text"
-                id="full_name"
-                name="full_name"
+                id="name"
+                name="name"
                 value={formData.full_name}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border rounded-md"

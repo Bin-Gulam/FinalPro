@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -27,37 +27,18 @@ const ApplicationForm = () => {
       name: '', age: '', gender: '', marital_status: '',
       region: '', district: '', ward: '', village: '',
       phone: '', passport_size: null,
-      sheha_knows_applicant: false, applicant_resides_in_shehia: false,
+      sheha_knows_applicant: false, 
       house_number: '', declaration_accepted: false,
     },
     business: {
       name: '', registration_number: '', location: '',
       type: '', income: '', bank_no: '', declaration_accepted: false,
     },
-    shehas: [],
-    selectedSheha: '',
     isSubmitting: false,
     error: null,
     success: false,
   });
 
-  // Fetch Shehas
-  useEffect(() => {
-    const fetchShehas = async () => {
-      try {
-        const token = localStorage.getItem('access_token');
-        if (!token) return navigate('/');
-        const res = await api.get('/shehas/');
-        setState((prev) => ({ ...prev, shehas: res.data.results || [] }));
-      } catch (err) {
-        if (err.response?.status === 401) navigate('/');
-        setState((prev) => ({ ...prev, shehas: [] }));
-      }
-    };
-    fetchShehas();
-  }, [navigate]);
-
-  // Handle change (input/select/checkbox)
   const handleChange = (formType) => (e) => {
     const { name, value, type, checked } = e.target;
     setState((prev) => ({
@@ -69,7 +50,6 @@ const ApplicationForm = () => {
     }));
   };
 
-  // Handle file input
   const handleFileChange = (e) => {
     setState((prev) => ({
       ...prev,
@@ -80,7 +60,6 @@ const ApplicationForm = () => {
     }));
   };
 
-  // Submit form
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -103,9 +82,6 @@ const ApplicationForm = () => {
       });
       if (state.applicant.passport_size) {
         formData.append('passport_size', state.applicant.passport_size);
-      }
-      if (state.selectedSheha) {
-        formData.append('sheha', state.selectedSheha);
       }
 
       // Submit applicant
@@ -138,7 +114,6 @@ const ApplicationForm = () => {
     }
   };
 
-  // Render helpers
   const renderInput = (formType, name, label, type = 'text', required = false, extra = {}) => (
     <div>
       <label className="block mb-1">{label}{required && '*'}</label>
@@ -209,29 +184,11 @@ const ApplicationForm = () => {
             {renderInput('applicant', 'age', 'Age', 'number', true, { min: 18 })}
             {renderSelect('applicant', 'gender', 'Gender', [['Male', 'Male'], ['Female', 'Female'], ['Other', 'Other']], true)}
             {renderSelect('applicant', 'marital_status', 'Marital Status', [['Single', 'Single'], ['Married', 'Married'], ['Divorced', 'Divorced'], ['Widowed', 'Widowed']])}
-            {renderSelect('applicant', 'region', 'Region', [['Region1', 'Region 1'], ['Region2', 'Region 2'], ['Region3', 'Region 3']])}
+            {renderInput('applicant', 'region', 'Region', 'text', true)}
             {renderInput('applicant', 'district', 'District')}
             {renderInput('applicant', 'ward', 'Ward')}
             {renderInput('applicant', 'village', 'Village')}
             {renderInput('applicant', 'phone', 'Phone Number', 'tel', true)}
-
-            <div>
-              <label className="block mb-1">Sheha*</label>
-              <select
-                value={state.selectedSheha}
-                onChange={(e) =>
-                  setState((prev) => ({ ...prev, selectedSheha: e.target.value }))
-                }
-                required
-                className="border rounded w-full p-2"
-              >
-                <option value="">Select Sheha</option>
-                {state.shehas.map((sheha) => (
-                  <option key={sheha.id} value={sheha.id}>{sheha.name}</option>
-                ))}
-              </select>
-            </div>
-
             <div>
               <label className="block mb-1">Passport Size Photo*</label>
               <input

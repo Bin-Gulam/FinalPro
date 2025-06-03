@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import *
 from django.core.validators import RegexValidator
+from women_youth_empowerment import settings
+
+
 
 # Custom user model extending AbstractUser
 class CustomUser(AbstractUser):
@@ -31,20 +34,20 @@ class CustomUser(AbstractUser):
 phone_validator = RegexValidator(regex=r'^\+?\d{10,15}$', message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed.")
 
 class Sheha(models.Model):
-    Sheha_ID = models.AutoField(primary_key=True)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     age = models.PositiveIntegerField()
     gender = models.CharField(max_length=10)
     phone = models.CharField(validators=[phone_validator], max_length=15)
-    ward = models.CharField(max_length=100)
+    ward = models.CharField(max_length=100, unique=True)
+    email = models.EmailField() 
 
-    
     def __str__(self):
         return self.name
 
 
 class Applicant(models.Model):
-    Applicant_ID = models.AutoField(primary_key=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     age = models.PositiveIntegerField()
     gender = models.CharField(max_length=10)
@@ -55,14 +58,15 @@ class Applicant(models.Model):
     village = models.CharField(max_length=100)
     phone = models.CharField(validators=[phone_validator], max_length=15)
     passport_size = models.ImageField(upload_to='passport_photos/')
-    sheha = models.ForeignKey(Sheha, on_delete=models.CASCADE)
+    sheha = models.ForeignKey(Sheha, on_delete=models.SET_NULL, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
 
     def __str__(self):
         return self.name
 
 
 class Business(models.Model):
-    Business_ID = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
     registration_number = models.CharField(max_length=100, blank=True, null=True)
     location = models.CharField(max_length=100)
@@ -84,7 +88,6 @@ class Business(models.Model):
         """
 
 class LoanOfficer(models.Model):
-    L_Officer_ID = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
     gender = models.CharField(max_length=10)
     age = models.PositiveIntegerField()
@@ -97,7 +100,6 @@ class LoanOfficer(models.Model):
 
 
 class Loan(models.Model):
-    Loan_ID = models.AutoField(primary_key=True)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     duration = models.CharField(max_length=50)
     status = models.CharField(max_length=50)
@@ -111,7 +113,6 @@ class Loan(models.Model):
 
 
 class Repayment(models.Model):
-    Repayment_ID = models.AutoField(primary_key=True)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     time = models.CharField(max_length=50)
     day = models.CharField(max_length=20)
@@ -120,3 +121,21 @@ class Repayment(models.Model):
 
     def __str__(self):
         return f"Repayment {self.Repayment_ID}"
+    
+# ==================
+# Sheha Notification
+# ==================
+class Notification(models.Model):
+    sheha = models.ForeignKey(Sheha, on_delete=models.CASCADE)
+    applicant = models.ForeignKey(Applicant, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    village = models.CharField(max_length=100)
+    passport_size = models.ImageField(upload_to='notification_passports/')
+    is_read = models.BooleanField(default=False)  
+    is_verified_by_sheha = models.BooleanField(default=False)  
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+   
+
+
+

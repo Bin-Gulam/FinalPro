@@ -1,15 +1,18 @@
 from rest_framework import serializers
 from .models import *
-
+from .models import CustomUser
+from empowerment_app.models import CustomUser as User
 
 # ================
 # User serializer
 # ================
 
-class CustomUserSerializer(serializers.ModelSerializer):
+class CustomUserCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['id', 'username', 'email', 'name']  
+        fields = ['username', 'email', 'password']
+        extra_kwargs = {'password': {'write_only': True}}
+
 
 # class ApplicantSerializer(serializers.ModelSerializer):
 #     user = serializers.SlugRelatedField(slug_field='username',queryset=CustomUser.objects.all())
@@ -19,10 +22,18 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
 
 class ApplicantSerializer(serializers.ModelSerializer):
-    sheha = serializers.SlugRelatedField(slug_field='name',queryset=Sheha.objects.all())
     class Meta:
         model = Applicant
-        fields = '__all__'
+        exclude = ['user']  # Don't expect it from frontend
+
+        extra_kwargs = {
+            'sheha': {'required': False, 'allow_null': True},
+        }
+
+    def create(self, validated_data):
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)
+
 
 class BusinessSerializer(serializers.ModelSerializer):
     applicant_name = serializers.CharField(source='applicant.name', read_only=True)
@@ -30,11 +41,57 @@ class BusinessSerializer(serializers.ModelSerializer):
     class Meta:
         model = Business
         fields = '__all__'
+        extra_kwargs = {
+            'applicant': {'required': False}
+        }
 
-class ShehaSerializer(serializers.ModelSerializer):
+    def create(self, validated_data):
+        applicant = self.context['request'].user.applicant_set.first()
+        if not applicant:
+            raise serializers.ValidationError("No applicant related to user.")
+        validated_data['applicant'] = applicant
+        return super().create(validated_data)
+
+
+
+class ShehaCreateSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(write_only=True, required=False)
+    email = serializers.EmailField(write_only=True, required=False)
+    password = serializers.CharField(write_only=True, required=False)
+
     class Meta:
         model = Sheha
-        fields = '__all__'
+        fields = ['id', 'name', 'age', 'gender', 'phone', 'ward', 'username', 'email', 'password']
+
+    def create(self, validated_data):
+        username = validated_data.pop('username')
+        email = validated_data.pop('email')
+        password = validated_data.pop('password')
+
+        user = CustomUser.objects.create_user(username=username, email=email, password=password)
+        sheha = Sheha.objects.create(user=user, **validated_data)
+        return sheha
+
+    def update(self, instance, validated_data):
+        # Update user fields if provided
+        user = instance.user
+        username = validated_data.pop('username', None)
+        email = validated_data.pop('email', None)
+        password = validated_data.pop('password', None)
+
+        if username:
+            user.username = username
+        if email:
+            user.email = email
+        if password:
+            user.set_password(password)
+        user.save()
+
+        # Update Sheha model fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
 
 class LoanOfficerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -47,7 +104,7 @@ class LoanSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Loan
-        fields = ['Loan_ID', 'amount', 'duration', 'status', 'application_date', 'approval_date', 'business', 'business_name', 'loan_officer', 'loan_officer_name']
+        fields = ['id', 'amount', 'duration', 'status', 'application_date', 'approval_date', 'business', 'business_name', 'loan_officer', 'loan_officer_name']
 
     def validate_amount(self, value):
         if value <= 0:
@@ -59,4 +116,14 @@ class RepaymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Repayment
-        fields = ['Repayment_ID', 'amount', 'time', 'day', 'date', 'business', 'business_name']
+        fields = ['id', 'amount', 'time', 'day', 'date', 'business', 'business_name']
+
+
+# ===================
+# Sheha Notification
+# ===================
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ['id', 'sheha', 'applicant', 'name', 'village', 'passport_size', 'is_read', 'is_verified_by_sheha', 'created_at']

@@ -1,17 +1,13 @@
 from empowerment_app.serializer import *
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
-from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework import generics
-from rest_framework.permissions import AllowAny
 
 
-User = get_user_model()
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
-    serializer_class = CustomUserSerializer
+    serializer_class = CustomUserCreateSerializer
 
     def get_permissions(self):
         if self.action == 'create':
@@ -40,7 +36,7 @@ class UserViewSet(viewsets.ModelViewSet):
         # Return a response with user data and tokens
         return Response({
             'message': 'User registered successfully',
-            'user': CustomUserSerializer(user).data,
+            'user': CustomUserCreateSerializer(user).data,
             'refresh': str(refresh),
             'access': str(refresh.access_token),
         }, status=status.HTTP_201_CREATED)

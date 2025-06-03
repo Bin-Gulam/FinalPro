@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { HomeIcon, UsersIcon, CogIcon, DocumentTextIcon } from '@heroicons/react/24/solid';
 import { FiLogOut } from 'react-icons/fi';
+import { FaBell } from 'react-icons/fa';
 import axios from 'axios';
 
 const Sidebar = () => {
@@ -37,7 +38,9 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="fixed top-0 left-0 h-screen w-64 bg-gray-800 text-white flex flex-col shadow-lg">
+    <div
+      className="fixed top-0 left-0 h-screen w-64 bg-gray-800 text-white flex flex-col shadow-lg z-40"
+    >
       <div className="p-4 text-xl font-bold border-b border-gray-700">Dashboard</div>
       <ul className="space-y-4 p-4 flex-1 overflow-y-auto">
         <li>
@@ -53,6 +56,17 @@ const Sidebar = () => {
           </Link>
         </li>
         <li>
+          <Link to="/notification" className="flex items-center space-x-2 hover:bg-gray-700 p-2 rounded block">
+            <div className="relative">
+              <FaBell className="h-5 w-5" />
+              <span className="absolute -top-2 -right-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
+                3
+              </span>
+            </div>
+            <span>Notifications</span>
+          </Link>
+        </li>
+        <li>
           <Link to="/apply_loan" className="flex items-center space-x-2 hover:bg-gray-700 p-2 rounded block">
             <DocumentTextIcon className="h-5 w-5" />
             <span>Apply Loan</span>
@@ -65,7 +79,6 @@ const Sidebar = () => {
           </Link>
         </li>
       </ul>
-
       <div className="p-4 border-t border-gray-700">
         <button
           onClick={handleLogout}

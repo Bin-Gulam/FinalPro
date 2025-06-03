@@ -22,3 +22,4 @@ export const clearTokens = () => {
   localStorage.removeItem('access_token'); // <-- fix spelling
   localStorage.removeItem('refresh_token');
 };
+
