@@ -2,6 +2,9 @@ from empowerment_app.serializer import *
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.decorators import action
+
+
 
 
 
@@ -41,6 +44,23 @@ class UserViewSet(viewsets.ModelViewSet):
             'access': str(refresh.access_token),
         }, status=status.HTTP_201_CREATED)
 
+class AuthViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @action(detail=False, methods=['post'], url_path='logout')
+    def logout(self, request):
+        refresh_token = request.data.get('refresh')
+        print("Received refresh token:", refresh_token)  # DEBUG
+        if not refresh_token:
+            return Response({"error": "Refresh token required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            token = RefreshToken(refresh_token)
+            token.blacklist()  # blacklist the refresh token
+            return Response({"message": "Logout successful"}, status=status.HTTP_205_RESET_CONTENT)
+        except Exception as e:
+            print("Logout error:", e)
+            return Response({"error": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
 
 # class ForgotPasswordView(generics.GenericAPIView):
 #     serializer_class = ForgotPasswordSerializer

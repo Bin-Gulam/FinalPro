@@ -8,6 +8,9 @@ import ApplicationForm from './Pages/Components/ApplicationForm';
 import ShehaManager from './Pages/Components/ShehaManagement';
 import DashboardLayout from './Pages/Components/DashboardLayout'; 
 import NotificationList from './Pages/Components/NotificationList.js';
+import LoanApplicationForm from './Pages/Components/LoanApplicationForm.js';
+import LoanOfficer from './Pages/Components/LoanOfficer.js';
+import BankVerification from './Pages/Components/BankVerification.js';
 
 function App() {
   return (
@@ -22,7 +25,10 @@ function App() {
         <Route element={<DashboardLayout />}>
           <Route path="/home" element={<Dashboard />} />
           <Route path="/apply_loan" element={<ApplicationForm />} />
+          <Route path="applications" element={<LoanApplicationForm/>}/>
           <Route path="/shehas" element={<ShehaManager />} />
+          <Route path='/loanOfficer' element={<LoanOfficer/>}/>
+          <Route path='bankverification' element={<BankVerification/>}/>
           <Route path="/notification" element={<NotificationList/>} />
         </Route>
       </Routes>

@@ -5,7 +5,7 @@ from empowerment_app.views import NotificationViewSet
 from empowerment_app.view_auth import *
 from empowerment_app.view_auth import UserViewSet  
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from django.conf.urls.static import static
+
 
 router = DefaultRouter()
 router.register(r'applicants', ApplicantViewSet)
@@ -16,6 +16,8 @@ router.register(r'loan-officers', LoanOfficerViewSet)
 router.register(r'repayments', RepaymentViewSet)
 router.register(r'users', UserViewSet)  
 router.register(r'notifications', NotificationViewSet)
+router.register(r'bank-loans', MockBankLoanViewSet, basename='bank-loans')
+router.register(r'auth', AuthViewSet, basename='auth')
 
 urlpatterns = [
     path('', include(router.urls)),  
@@ -26,4 +28,4 @@ urlpatterns = [
     # path('register/', RegisterView.as_view(), name='register'),
     
     
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+] 

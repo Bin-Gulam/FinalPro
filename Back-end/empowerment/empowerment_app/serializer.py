@@ -24,15 +24,18 @@ class CustomUserCreateSerializer(serializers.ModelSerializer):
 class ApplicantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Applicant
-        exclude = ['user']  # Don't expect it from frontend
+        fields = '__all__'  # or list fields explicitly except 'user'
+        read_only_fields = ['user', 'sheha'] 
 
         extra_kwargs = {
             'sheha': {'required': False, 'allow_null': True},
+            'passport_photo': {'required': False, 'allow_null': True},
         }
 
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
+
 
 
 class BusinessSerializer(serializers.ModelSerializer):
@@ -104,7 +107,7 @@ class LoanSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Loan
-        fields = ['id', 'amount', 'duration', 'status', 'application_date', 'approval_date', 'business', 'business_name', 'loan_officer', 'loan_officer_name']
+        fields = '__all__'
 
     def validate_amount(self, value):
         if value <= 0:
@@ -116,7 +119,7 @@ class RepaymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Repayment
-        fields = ['id', 'amount', 'time', 'day', 'date', 'business', 'business_name']
+        fields = '__all__'
 
 
 # ===================
@@ -127,3 +130,11 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = ['id', 'sheha', 'applicant', 'name', 'village', 'passport_size', 'is_read', 'is_verified_by_sheha', 'created_at']
+
+# =========
+# BankMock
+# =========
+class MockBankLoanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MockBankLoan
+        fields = '__all__'

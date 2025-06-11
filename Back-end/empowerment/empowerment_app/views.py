@@ -9,6 +9,7 @@ from rest_framework import viewsets,permissions
 from rest_framework.permissions import IsAuthenticated, SAFE_METHODS, BasePermission
 from .filters import ApplicantFilter  
 from django.core.mail import send_mail
+from rest_framework import status
 
 
 # =====================
@@ -16,17 +17,26 @@ from django.core.mail import send_mail
 # =====================
 
 
-
 class ApplicantViewSet(viewsets.ModelViewSet):
     queryset = Applicant.objects.all()
     serializer_class = ApplicantSerializer
-    filterset_class = ApplicantFilter  
-    permission_classes = [IsAuthenticated] 
+    filterset_class = ApplicantFilter
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            print("Serializer errors:", serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer):
         user = self.request.user
 
-        # Step 1: Save applicant with user (no sheha yet)
+        # Step 1: Save applicant with user
         applicant = serializer.save(user=user)
 
         # Step 2: Assign sheha automatically based on ward
@@ -47,7 +57,6 @@ class ApplicantViewSet(viewsets.ModelViewSet):
                 passport_size=applicant.passport_size
             )
 
-            # ✅ Step 4: Send Email Notification
             if applicant.sheha.email:
                 send_mail(
                     subject='New Applicant Notification',
@@ -60,7 +69,6 @@ class ApplicantViewSet(viewsets.ModelViewSet):
                     recipient_list=[applicant.sheha.email],
                     fail_silently=True,
                 )
-
 class BusinessViewSet(viewsets.ModelViewSet):
     queryset = Business.objects.all()
     serializer_class = BusinessSerializer
@@ -78,22 +86,21 @@ class ShehaViewSet(viewsets.ModelViewSet):
     queryset = Sheha.objects.all()
     serializer_class = ShehaCreateSerializer
     permission_classes = [permissions.IsAdminUser] 
-    # filter_backends = [DjangoFilterBackend, SearchFilter]
-    # filterset_fields = ['ward']  # Filter by ward
-    # search_fields = ['user__username', 'ward']  # Search by username or ward
-
-
+   
 class LoanViewSet(viewsets.ModelViewSet):
     queryset = Loan.objects.all()
     serializer_class = LoanSerializer
+    permission_classes = [IsAuthenticated]
 
 class LoanOfficerViewSet(viewsets.ModelViewSet):
     queryset = LoanOfficer.objects.all()
     serializer_class = LoanOfficerSerializer
+    permission_classes = [permissions.IsAdminUser]
 
 class RepaymentViewSet(viewsets.ModelViewSet):
     queryset = Repayment.objects.all()
     serializer_class = RepaymentSerializer
+    permission_classes = [IsAuthenticated]
 
 # =================
 # Notification viws
@@ -102,11 +109,14 @@ class NotificationViewSet(viewsets.ModelViewSet):
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
     permission_classes = [IsAuthenticated]
-
+    
     def get_queryset(self):
         user = self.request.user
-        # Return only notifications for the Sheha linked to the logged-in user
-        return Notification.objects.filter(sheha__user=user).order_by('-created_at')
+        print(f"User: {user}, ID: {user.id}")
+        qs = Notification.objects.filter(sheha__user=user).order_by('-created_at')
+        print(f"Notifications found: {qs.count()}")
+        return qs
+
 
     @action(detail=True, methods=['post'])
     def verify(self, request, pk=None):
@@ -132,3 +142,12 @@ class NotificationViewSet(viewsets.ModelViewSet):
             )
 
         return Response({'status': 'Notification verified and applicant updated.'})
+
+
+# =========
+# BankMock
+# =========
+class MockBankLoanViewSet(viewsets.ModelViewSet):
+    queryset = MockBankLoan.objects.all() 
+    serializer_class = MockBankLoanSerializer
+    permission_classes = [IsAuthenticated]

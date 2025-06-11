@@ -1,155 +1,168 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-
-export default function ShehaNotifications() {
+import { HiCheckCircle, HiXCircle } from 'react-icons/hi';
+import { toast, ToastContainer } from 'react-toastify';
+const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000/api';
-  const BASE_URL = 'http://localhost:8000';
-  const token = localStorage.getItem('access_token');
-
-  const fetchNotifications = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const res = await axios.get(`${API_BASE_URL}/notifications/`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (Array.isArray(res.data.results)) {
-        setNotifications(res.data.results);
-
-        // Open passport of first applicant (unverified only) in new tab
-        const firstUnverified = res.data.results.find(n => n.passport_size && !n.is_verified_by_sheha);
-        if (firstUnverified) {
-          window.open(`${BASE_URL}${firstUnverified.passport_size}`, '_blank');
-        }
-
-      } else {
-        console.error('Unexpected response:', res.data);
-        setNotifications([]);
-        setError('Unexpected server response.');
-      }
-
-    } catch (err) {
-      if (err.response?.status === 401) {
-        setError('Unauthorized: Please login again.');
-      } else {
-        setError('Failed to load notifications.');
-      }
-      setNotifications([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [API_BASE_URL, token]);
+  const [error, setError] = useState('');
+  const [notificationCount, setNotificationCount] = useState(0);
 
   useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const token = localStorage.getItem('access_token');
+        const response = await axios.get(
+          `${process.env.REACT_APP_API_URL}/notifications/`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        const data = Array.isArray(response.data)
+          ? response.data
+          : response.data.results || [];
+
+        setNotifications(data);
+        setNotificationCount(data.length);
+      } catch (err) {
+        console.error('Error fetching notifications:', err);
+        setError('Failed to load notifications.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchNotifications();
-  }, [fetchNotifications]);
+  }, []);
 
-  const verifyApplicant = async (id) => {
-    try {
-      await axios.post(`${API_BASE_URL}/notifications/${id}/verify/`, null, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      alert('Applicant verified!');
-      fetchNotifications();
-    } catch (err) {
-      alert('Failed to verify applicant.');
-      console.error(err);
-    }
+  const showTailwindToast = (message, type = 'success') => {
+    toast(
+      ({ closeToast }) => (
+        <div
+          className={`flex items-center justify-between p-4 rounded shadow-md text-white ${
+            type === 'success' ? 'bg-green-600' : 'bg-red-600'
+          }`}
+        >
+          <span>{message}</span>
+          <button onClick={closeToast} className="ml-4 font-bold">×</button>
+        </div>
+      ),
+      { autoClose: 3000, position: 'top-right' }
+    );
   };
 
-  const rejectApplicant = async (id) => {
+  const handleAction = async (id, action) => {
     try {
-      await axios.post(`${API_BASE_URL}/notifications/${id}/reject/`, null, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const token = localStorage.getItem('access_token');
+      await axios.post(
+        `${process.env.REACT_APP_API_URL}/notifications/${id}/${action}/`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      setNotifications((prev) => {
+        const updated = prev.filter((n) => n.id !== id);
+        setNotificationCount(updated.length);
+        return updated;
       });
-      alert('Applicant rejected.');
-      fetchNotifications();
-    } catch (err) {
-      alert('Failed to reject applicant.');
-      console.error(err);
+
+      showTailwindToast(
+        `Applicant ${action === 'verify' ? 'verified' : 'rejected'} successfully`,
+        'success'
+      );
+    } catch (error) {
+      console.error(`Error during ${action}:`, error);
+      showTailwindToast(`Failed to ${action} the applicant.`, 'error');
     }
   };
-
-  if (loading) return <p>Loading notifications...</p>;
-  if (error) return <p>{error}</p>;
 
   return (
-    <div style={{ maxWidth: 600, margin: 'auto', padding: 20 }}>
-      <h2>Sheha Notifications</h2>
-      <p style={{ marginBottom: '20px', fontStyle: 'italic', color: '#555' }}>
-        Please review the applicants below. If you personally know the applicant, click "Verify Applicant". 
-        If not, click "Reject Applicant".
-      </p>
-
-      {notifications.length === 0 && <p>No notifications found.</p>}
-
-      {notifications.map((n) => (
-        <div
-          key={n.id}
-          style={{
-            border: '1px solid #ccc',
-            borderRadius: 8,
-            padding: 15,
-            marginBottom: 15,
-            backgroundColor: n.is_verified_by_sheha ? '#d4edda' : '#f8d7da',
-          }}
-        >
-          <p><strong>Name:</strong> {n.name}</p>
-          <p><strong>Village:</strong> {n.village}</p>
-          <p><strong>Verified:</strong> {n.is_verified_by_sheha ? 'Yes' : 'No'}</p>
-          {n.passport_size && (
-            <a href={`${BASE_URL}${n.passport_size}`} target="_blank" rel="noopener noreferrer">
-              <img
-                src={`${BASE_URL}${n.passport_size}`}
-                alt="Applicant Passport"
-                width={120}
-                style={{ borderRadius: 4, marginBottom: 10 }}
-              />
-            </a>
+    <div className="flex justify-center items-start min-h-screen bg-gray-100 px-4 py-8">
+      <div className="w-full max-w-3xl bg-white shadow-md rounded-lg p-6">
+        <h1 className="text-2xl font-bold text-gray-800 mb-4 flex justify-center items-center gap-2">
+          Notifications
+          {notificationCount > 0 && (
+            <span className="bg-red-500 text-white text-sm rounded-full px-3 py-0.5">
+              {notificationCount}
+            </span>
           )}
-          {!n.is_verified_by_sheha && (
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button
-                onClick={() => verifyApplicant(n.id)}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#007bff',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 4,
-                  cursor: 'pointer',
-                }}
+        </h1>
+
+        {loading ? (
+          <p className="text-gray-500">Loading notifications...</p>
+        ) : error ? (
+          <p className="text-red-500">{error}</p>
+        ) : notifications.length === 0 ? (
+          <p className="text-gray-500">
+            No notifications available for your account. If you're a Sheha,
+            please ensure your account is properly linked.
+          </p>
+        ) : (
+          <ul className="space-y-6">
+            {notifications.map((notification) => (
+              <li
+                key={notification.id}
+                className="border-l-4 border-blue-500 bg-blue-50 px-4 py-4 rounded shadow-sm"
               >
-                Verify Applicant
-              </button>
-              <button
-                onClick={() => rejectApplicant(n.id)}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#dc3545',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 4,
-                  cursor: 'pointer',
-                }}
-              >
-                Reject Applicant
-              </button>
-            </div>
-          )}
-        </div>
-      ))}
+                <p className="text-lg font-semibold text-gray-800">
+                  Name: {notification.name}
+                </p>
+                <p className="text-gray-700">Village: {notification.village}</p>
+
+                {notification.passport_size && (
+                  <div className="my-2">
+                    <img
+                      src={notification.passport_size}
+                      alt="Passport"
+                      className="w-24 h-24 object-cover border rounded"
+                    />
+                    <p className="text-gray-700 mb-1"><b>Passport Photo:</b></p>
+                  </div>
+                )}
+
+                <p className="text-sm text-gray-500">
+                  Received: {new Date(notification.created_at).toLocaleString()}
+                </p>
+
+                <p className="mt-4 text-gray-800 font-medium">
+                  <b>Je! unamfahamu na yupo katika shehia yako?</b>
+                </p>
+
+                <div className="flex space-x-4 mt-3">
+                  <button
+                    onClick={() => handleAction(notification.id, 'verify')}
+                    className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+                  >
+                    <HiCheckCircle className="w-5 h-5" />
+                    Verify
+                  </button>
+
+                  <button
+                    onClick={() => handleAction(notification.id, 'reject')}
+                    className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+                  >
+                    <HiXCircle className="w-5 h-5" />
+                    Reject
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Tailwind-styled toast container */}
+      <ToastContainer />
     </div>
   );
-}
+};
+
+export default Notifications;

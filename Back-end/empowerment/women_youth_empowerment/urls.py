@@ -17,8 +17,9 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.http import HttpResponse
-from rest_framework.authtoken.views import obtain_auth_token
+from django.conf.urls.static import static
 
+from women_youth_empowerment import settings
 
 urlpatterns = [
     path('', lambda request: HttpResponse("Welcome to my API!")),
@@ -27,5 +28,5 @@ urlpatterns = [
     # path('api-token-auth/', obtain_auth_token), 
 ]
 
-
-
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -22,12 +22,13 @@ api.interceptors.request.use(
 const ApplicationForm = () => {
   const navigate = useNavigate();
 
+  const [showPopup, setShowPopup] = useState(false);
   const [state, setState] = useState({
     applicant: {
       name: '', age: '', gender: '', marital_status: '',
       region: '', district: '', ward: '', village: '',
       phone: '', passport_size: null,
-      sheha_knows_applicant: false, 
+      sheha_knows_applicant: false,
       house_number: '', declaration_accepted: false,
     },
     business: {
@@ -84,19 +85,22 @@ const ApplicationForm = () => {
         formData.append('passport_size', state.applicant.passport_size);
       }
 
-      // Submit applicant
       const applicantRes = await api.post('/applicants/', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      // Submit business
       await api.post('/businesses/', {
         ...state.business,
         applicant: applicantRes.data.Applicant_ID,
       });
 
       setState((prev) => ({ ...prev, success: true }));
-      setTimeout(() => navigate('/applications'), 2000);
+      setShowPopup(true);
+
+      setTimeout(() => {
+        setShowPopup(false);
+        navigate('/applications');
+      }, 5000);
     } catch (error) {
       let msg = 'Failed to submit application.';
       if (error.response?.status === 401) {
@@ -166,11 +170,6 @@ const ApplicationForm = () => {
       <div className="max-w-5xl mx-auto bg-white p-6 rounded shadow">
         <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">Apply for a Loan Here!</h1>
 
-        {state.success && (
-          <div className="mb-4 p-4 bg-green-100 text-green-700 rounded">
-            Application submitted successfully! Redirecting...
-          </div>
-        )}
         {state.error && (
           <div className="mb-4 p-4 bg-red-100 text-red-700 rounded whitespace-pre-line">
             {state.error}
@@ -224,6 +223,28 @@ const ApplicationForm = () => {
           </button>
         </form>
       </div>
+
+      {/* ✅ Success Popup Modal */}
+      {showPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md shadow-lg text-center">
+            <h2 className="text-xl font-bold text-green-600 mb-4">Success!</h2>
+            <p className="text-gray-700">
+              You successfully submitted your information. <br />
+              Please wait for <strong>Sheha</strong>'s confirmation to proceed to the next steps.
+            </p>
+            <button
+              onClick={() => {
+                setShowPopup(false);
+                navigate('/applications');
+              }}
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

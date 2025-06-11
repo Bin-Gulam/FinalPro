@@ -8,7 +8,7 @@ from women_youth_empowerment import settings
 # Custom user model extending AbstractUser
 class CustomUser(AbstractUser):
     name = models.CharField(max_length=100)  
-    email = models.EmailField(unique=True)  
+    email = models.EmailField(unique=False)  
 
     groups = models.ManyToManyField(
         Group,
@@ -57,7 +57,7 @@ class Applicant(models.Model):
     ward = models.CharField(max_length=100)
     village = models.CharField(max_length=100)
     phone = models.CharField(validators=[phone_validator], max_length=15)
-    passport_size = models.ImageField(upload_to='passport_photos/')
+    passport_size = models.ImageField(upload_to='passport_photos/', blank=True, null=True)
     sheha = models.ForeignKey(Sheha, on_delete=models.SET_NULL, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -126,15 +126,44 @@ class Repayment(models.Model):
 # Sheha Notification
 # ==================
 class Notification(models.Model):
-    sheha = models.ForeignKey(Sheha, on_delete=models.CASCADE)
-    applicant = models.ForeignKey(Applicant, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100)
-    village = models.CharField(max_length=100)
-    passport_size = models.ImageField(upload_to='notification_passports/')
-    is_read = models.BooleanField(default=False)  
-    is_verified_by_sheha = models.BooleanField(default=False)  
-    created_at = models.DateTimeField(auto_now_add=True)
+     STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('verified', 'Verified'),
+        ('rejected', 'Rejected'),
+    ]
+     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+     sheha = models.ForeignKey(Sheha, on_delete=models.CASCADE)
+     applicant = models.ForeignKey(Applicant, on_delete=models.CASCADE)
+     name = models.CharField(max_length=100)
+     village = models.CharField(max_length=100)
+     passport_size = models.ImageField(upload_to='notification_passports/')
+     is_read = models.BooleanField(default=False)
+     is_verified_by_sheha = models.BooleanField(default=False)
+     created_at = models.DateTimeField(auto_now_add=True)
     
+
+# ==============
+# BankMockLoan
+# ==============
+class MockBankLoan(models.Model):
+    bank_account_no = models.CharField(max_length=20, unique=True)
+    applicant_name = models.CharField(max_length=100)
+    has_loan = models.BooleanField(default=False)
+    loan_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    loan_status = models.CharField(max_length=20, default="N/A")  # e.g., Active, Defaulted
+    balance_remaining = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    last_payment_date = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return self.applicant_name
+
+
+   
+    
+    
+    
+
+
    
 
 
