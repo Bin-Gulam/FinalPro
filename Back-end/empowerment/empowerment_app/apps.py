@@ -5,4 +5,7 @@ class EmpowermentAppConfig(AppConfig):
     name = 'empowerment_app'
 
     def ready(self):
-        pass  
+        pass
+
+
+

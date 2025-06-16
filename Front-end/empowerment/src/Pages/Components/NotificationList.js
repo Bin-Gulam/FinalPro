@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { HiCheckCircle, HiXCircle } from 'react-icons/hi';
 import { toast, ToastContainer } from 'react-toastify';
+
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,6 +22,8 @@ const Notifications = () => {
             },
           }
         );
+
+        // Handle paginated or direct array
         const data = Array.isArray(response.data)
           ? response.data
           : response.data.results || [];
@@ -68,11 +71,10 @@ const Notifications = () => {
         }
       );
 
-      setNotifications((prev) => {
-        const updated = prev.filter((n) => n.id !== id);
-        setNotificationCount(updated.length);
-        return updated;
-      });
+      // Remove verified/rejected notification from state
+      const updated = notifications.filter((n) => n.id !== id);
+      setNotifications(updated);
+      setNotificationCount(updated.length);
 
       showTailwindToast(
         `Applicant ${action === 'verify' ? 'verified' : 'rejected'} successfully`,
@@ -102,8 +104,7 @@ const Notifications = () => {
           <p className="text-red-500">{error}</p>
         ) : notifications.length === 0 ? (
           <p className="text-gray-500">
-            No notifications available for your account. If you're a Sheha,
-            please ensure your account is properly linked.
+            No notifications found for your account. If you're a Sheha, ensure your account is linked.
           </p>
         ) : (
           <ul className="space-y-6">
@@ -119,17 +120,19 @@ const Notifications = () => {
 
                 {notification.passport_size && (
                   <div className="my-2">
+                    <p className="text-gray-700 mb-1 font-semibold">Passport Photo:</p>
                     <img
                       src={notification.passport_size}
                       alt="Passport"
                       className="w-24 h-24 object-cover border rounded"
                     />
-                    <p className="text-gray-700 mb-1"><b>Passport Photo:</b></p>
                   </div>
                 )}
 
                 <p className="text-sm text-gray-500">
-                  Received: {new Date(notification.created_at).toLocaleString()}
+                  Received: {notification.created_at
+                    ? new Date(notification.created_at).toLocaleString()
+                    : 'Unknown time'}
                 </p>
 
                 <p className="mt-4 text-gray-800 font-medium">
@@ -159,7 +162,6 @@ const Notifications = () => {
         )}
       </div>
 
-      {/* Tailwind-styled toast container */}
       <ToastContainer />
     </div>
   );

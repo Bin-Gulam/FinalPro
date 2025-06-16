@@ -40,7 +40,7 @@ class Sheha(models.Model):
     gender = models.CharField(max_length=10)
     phone = models.CharField(validators=[phone_validator], max_length=15)
     ward = models.CharField(max_length=100, unique=True)
-    email = models.EmailField() 
+    email = models.EmailField(unique=True) 
 
     def __str__(self):
         return self.name
@@ -57,35 +57,45 @@ class Applicant(models.Model):
     ward = models.CharField(max_length=100)
     village = models.CharField(max_length=100)
     phone = models.CharField(validators=[phone_validator], max_length=15)
+    passport_size = models.ImageField(upload_to='passport_photos/')
     passport_size = models.ImageField(upload_to='passport_photos/', blank=True, null=True)
     sheha = models.ForeignKey(Sheha, on_delete=models.SET_NULL, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
+    is_verified_by_sheha = models.BooleanField(default=False)
+    is_verified_by_bank = models.BooleanField(default=False)
+    bank_status = models.CharField(default='pending', max_length=20)
+    is_verified = models.BooleanField(default=False)
+
 
     def __str__(self):
         return self.name
 
 
+
+
 class Business(models.Model):
+    applicant = models.ForeignKey(Applicant, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     registration_number = models.CharField(max_length=100, blank=True, null=True)
     location = models.CharField(max_length=100)
     type = models.CharField(max_length=50)
     income = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
-    bank_no = models.CharField(max_length=50)
-    applicant = models.ForeignKey(Applicant, on_delete=models.CASCADE)
-    declaration_accepted = models.BooleanField(default=False)
+    bank_no = models.CharField(max_length=20, unique=True)
 
     def __str__(self):
         return self.name
+ 
+    
 
-    @property
-    def applicant_declaration(self):
-        return f"""
-        Mimi, {self.applicant.name}, ninathibitisha kwamba maelezo niliyotoa hapo juu ni sahihi na kamili.
-        Iwapo itagundulika kwamba nimetoa taarifa za uongo kwa makusudi, niko tayari kuondolewa kwenye mchakato 
-        wa kupata mkopo huu na kuchukuliwa hatua za kisheria ikihitajika.
-        """
+
+    # @property
+    # def applicant_declaration(self):
+    #     return f"""
+    #     Mimi, {self.applicant.name}, ninathibitisha kwamba maelezo niliyotoa hapo juu ni sahihi na kamili.
+    #     Iwapo itagundulika kwamba nimetoa taarifa za uongo kwa makusudi, niko tayari kuondolewa kwenye mchakato 
+    #     wa kupata mkopo huu na kuchukuliwa hatua za kisheria ikihitajika.
+    #     """
 
 class LoanOfficer(models.Model):
     name = models.CharField(max_length=100)
@@ -146,14 +156,14 @@ class Notification(models.Model):
 # BankMockLoan
 # ==============
 class MockBankLoan(models.Model):
-    bank_account_no = models.CharField(max_length=20, unique=True)
+    bank_no = models.CharField(max_length=20, unique=True)
     applicant_name = models.CharField(max_length=100)
-    has_loan = models.BooleanField(default=False)
+    has_active_loan = models.BooleanField(default=False)
     loan_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    loan_status = models.CharField(max_length=20, default="N/A")  # e.g., Active, Defaulted
+    loan_status = models.CharField(max_length=20, default="N/A")
     balance_remaining = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     last_payment_date = models.DateField(null=True, blank=True)
-
+    
     def __str__(self):
         return self.applicant_name
 

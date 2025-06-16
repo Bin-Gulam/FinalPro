@@ -98,6 +98,13 @@ const handleLogout = async () => {
           </Link>
         </li>
 
+ <li>
+          <Link to="/applications" className="flex items-center space-x-2 hover:bg-gray-700 p-2 rounded block">
+            <DocumentTextIcon className="h-5 w-5" />
+            <span>LoanForm</span>
+          </Link>
+        </li>
+
         <li>
           <Link to="/loanOfficer" className="flex items-center space-x-2 hover:bg-gray-700 p-2 rounded block">
             <DocumentTextIcon className="h-5 w-5" />

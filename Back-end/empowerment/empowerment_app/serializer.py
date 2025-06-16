@@ -24,7 +24,7 @@ class CustomUserCreateSerializer(serializers.ModelSerializer):
 class ApplicantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Applicant
-        fields = '__all__'  # or list fields explicitly except 'user'
+        fields = '__all__'  
         read_only_fields = ['user', 'sheha'] 
 
         extra_kwargs = {
