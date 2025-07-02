@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { HiCheckCircle, HiXCircle } from 'react-icons/hi';
 import { toast, ToastContainer } from 'react-toastify';
+import UserNavbar from '../Components/UserNavbar';
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
@@ -87,6 +88,8 @@ const Notifications = () => {
   };
 
   return (
+    <>
+    <UserNavbar/>
     <div className="flex justify-center items-start min-h-screen bg-gray-100 px-4 py-8">
       <div className="w-full max-w-3xl bg-white shadow-md rounded-lg p-6">
         <h1 className="text-2xl font-bold text-gray-800 mb-4 flex justify-center items-center gap-2">
@@ -164,6 +167,7 @@ const Notifications = () => {
 
       <ToastContainer />
     </div>
+    </>
   );
 };
 

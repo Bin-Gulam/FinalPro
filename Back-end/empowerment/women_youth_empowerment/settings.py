@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'channels',
     'django_extensions',
+    'bank_app',
 ]
 
 MIDDLEWARE = [
@@ -125,8 +126,20 @@ DATABASES = {
         'PASSWORD': '12345678',
         'HOST': 'localhost',
         'PORT': '5432',
+    },
+
+      'bankdb': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'bankdb',
+        'USER': 'bank',
+        'PASSWORD': '12345678',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
+
+# DATABASE_ROUTERS = ['empowerment_app.dbrouters.BankDBRouter']
+DATABASE_ROUTERS = ['bank_app.db_router.BankDBRouter']
 
 
 

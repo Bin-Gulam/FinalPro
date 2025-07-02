@@ -12,63 +12,69 @@ function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+const handleLogin = async (e) => {
+  e.preventDefault();
 
-    if (!username || !password) {
-      setMessage({ text: 'Username and Password are required.', variant: 'danger' });
-      return;
-    }
+  if (!username || !password) {
+    setMessage({ text: 'Username and Password are required.', variant: 'danger' });
+    return;
+  }
 
-    setIsLoading(true);
+  setIsLoading(true);
 
-    try {
-      const response = await axios.post(`${API_BASE_URL}/login/`, {
-        username: username,
-        password: password,
-      });
+  try {
+    const response = await axios.post(`${API_BASE_URL}/login/`, {
+      username: username,
+      password: password,
+    });
 
-      // Store tokens securely
-      if (response.data.access && response.data.refresh) {
-        localStorage.setItem('access_token', response.data.access);
-        localStorage.setItem('refresh_token', response.data.refresh);
-        
-        // Also store in sessionStorage for added security (optional)
-        sessionStorage.setItem('access_token', response.data.access);
-        
-        // Set axios default authorization header
-        axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
-        
-        // Store user data if available
-        if (response.data.user) {
-          localStorage.setItem('user', JSON.stringify(response.data.user));
-        }
+    if (response.data.access && response.data.refresh) {
+      localStorage.setItem('access_token', response.data.access);
+      localStorage.setItem('refresh_token', response.data.refresh);
+      sessionStorage.setItem('access_token', response.data.access);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
+
+      if (response.data.user) {
+        localStorage.setItem('user', JSON.stringify(response.data.user));
       }
-
-      setMessage({ text: 'Login successful! Redirecting...', variant: 'success' });
-
-      // Navigate after success
-      setTimeout(() => navigate('/home'), 1000);
-    } catch (error) {
-      console.error('Login error:', error.response?.data || error.message);
-
-      const errMsg =
-        error.response?.data?.detail ||
-        (error.response?.data?.non_field_errors
-          ? error.response.data.non_field_errors[0]
-          : 'Login failed. Please check your credentials.');
-
-      setMessage({ text: errMsg, variant: 'danger' });
-      
-      // Clear any existing tokens on failed login
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      sessionStorage.removeItem('access_token');
-      delete axios.defaults.headers.common['Authorization'];
-    } finally {
-      setIsLoading(false);
     }
-  };
+
+    setMessage({ text: 'Login successful! Redirecting...', variant: 'success' });
+
+    // Role-based redirection
+    setTimeout(() => {
+      const user = response.data.user;
+      if (user.role === 'admin') {
+        navigate('/admin-dashboard');}
+         else if (user.role === 'applicant' || user.role === 'user') {
+           // assuming 'user' role means normal applicant as well
+           navigate('/user-dashboard');
+          } else if (user.role === 'sheha') {
+            navigate('/notification');
+          } else if (user.role === 'loan_officer') {
+            navigate('/loan-review');  // corrected typo from 'loan-rivew'
+            } 
+
+    }, 1000);
+  } catch (error) {
+    console.error('Login error:', error.response?.data || error.message);
+
+    const errMsg =
+      error.response?.data?.detail ||
+      (error.response?.data?.non_field_errors
+        ? error.response.data.non_field_errors[0]
+        : 'Login failed. Please check your credentials.');
+
+    setMessage({ text: errMsg, variant: 'danger' });
+
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    sessionStorage.removeItem('access_token');
+    delete axios.defaults.headers.common['Authorization'];
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
@@ -178,3 +184,9 @@ function Login() {
 }
 
 export default Login;
+
+// 🛡️ Restrict access to those routes unless the user is logged in
+
+// ⛔ Prevent access if the role is not allowed
+
+// 🔁 Implement logout or token refresh logic

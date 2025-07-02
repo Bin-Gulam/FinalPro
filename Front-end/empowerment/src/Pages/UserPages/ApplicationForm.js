@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import UserNavbar from '../Components/UserNavbar';
 
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL,
@@ -33,7 +34,7 @@ const ApplicationForm = () => {
     },
     business: {
       name: '', registration_number: '', location: '',
-      type: '', income: '', bank_no: '', declaration_accepted: false,
+      type: '', anual_income:'', bank_no: '', declaration_accepted: false,
     },
     isSubmitting: false,
     error: null,
@@ -99,7 +100,7 @@ const ApplicationForm = () => {
 
       setTimeout(() => {
         setShowPopup(false);
-        navigate('/applications');
+        navigate('/loan-type');
       }, 5000);
     } catch (error) {
       let msg = 'Failed to submit application.';
@@ -166,6 +167,8 @@ const ApplicationForm = () => {
   );
 
   return (
+    <>
+    <UserNavbar/>
     <div className="ml-64 min-h-screen bg-gray-50 p-8">
       <div className="max-w-5xl mx-auto bg-white p-6 rounded shadow">
         <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">Apply for a Loan Here!</h1>
@@ -206,7 +209,7 @@ const ApplicationForm = () => {
             {renderInput('business', 'registration_number', 'Business Registration Number')}
             {renderInput('business', 'location', 'Business Location', 'text', true)}
             {renderInput('business', 'type', 'Type of Business')}
-            {renderInput('business', 'income', 'Monthly Income', 'number')}
+            {renderInput('business', 'anual_income', 'Annual Income', 'number')}
             {renderInput('business', 'bank_no', 'Bank Account Number')}
           </div>
 
@@ -236,7 +239,7 @@ const ApplicationForm = () => {
             <button
               onClick={() => {
                 setShowPopup(false);
-                navigate('/applications');
+                navigate('/loan-type');
               }}
               className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
@@ -246,6 +249,7 @@ const ApplicationForm = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 

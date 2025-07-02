@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { PencilSquareIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/solid';
+import AdminNavbar from '../Components/AdminNavbar';
 
 export default function ShehaManager() {
   const [shehas, setShehas] = useState([]);
@@ -129,6 +130,8 @@ export default function ShehaManager() {
   };
 
   return (
+    <>
+    <AdminNavbar/>
     <div className="p-8 max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold mb-6 text-center">Manage Shehas</h1>
 
@@ -280,5 +283,6 @@ export default function ShehaManager() {
         )}
       </div>
     </div>
+    </>
   );
 }

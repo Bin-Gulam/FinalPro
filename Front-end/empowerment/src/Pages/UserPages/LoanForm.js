@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, {Link, useState, useEffect } from 'react';
 import axios from 'axios';
+import UserNavbar from '../Components/UserNavbar';
 
-const LoanApplicationForm = () => {
+const LoanForm = () => {
   const [formData, setFormData] = useState({
     amount: '',
     duration: '',
@@ -115,6 +116,8 @@ const LoanApplicationForm = () => {
   if (loading) return <div className="text-center mt-10">Loading...</div>;
 
   return canApply ? (
+    <>
+    <UserNavbar/>
     <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
       <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-md w-full max-w-lg">
         <h2 className="text-2xl font-bold mb-4">Loan Application Form</h2>
@@ -163,7 +166,8 @@ const LoanApplicationForm = () => {
     <div className="text-center mt-10 text-red-600 font-semibold">
       {notification.message || 'You are not allowed to apply at this time.'}
     </div>
+    </>
   );
 };
 
-export default LoanApplicationForm;
+export default LoanForm;

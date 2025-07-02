@@ -8,6 +8,7 @@ from django.utils.html import format_html
 
 # Register custom user and other models
 admin.site.register(CustomUser, UserAdmin)
+admin.site.register(LoanType)
 
 class ShehaAdminForm(forms.ModelForm):
     username = forms.CharField(label="Username")
@@ -60,7 +61,7 @@ class ApplicantAdmin(admin.ModelAdmin):
 @admin.register(Business)
 class BusinessAdmin(admin.ModelAdmin):
     autocomplete_fields = ('applicant',) 
-    list_display = ('id', 'name', 'bank_no', 'location', 'type', 'applicant')
+    list_display = ('id', 'name', 'bank_no', 'location', 'type', 'anual_income', 'applicant')
     search_fields = ('name', 'bank_no', 'location')
     list_filter = ('type',)
 
@@ -84,8 +85,8 @@ class RepaymentAdmin(admin.ModelAdmin):
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
     list_display = ('name', 'village', 'sheha', 'applicant', 'is_read', 'is_verified_by_sheha', 'created_at', 'image_tag')
-    list_filter = ('is_read', 'is_verified_by_sheha', 'sheha__ward')  # Filtering options
-    search_fields = ('name', 'village', 'sheha__user__username', 'applicant__name')  # Searchable fields
+    list_filter = ('is_read', 'is_verified_by_sheha', 'sheha__ward')  
+    search_fields = ('name', 'village', 'sheha__user__username', 'applicant__name') 
     readonly_fields = ('image_tag', 'created_at')
 
     def image_tag(self, obj):
@@ -93,3 +94,14 @@ class NotificationAdmin(admin.ModelAdmin):
             return format_html('<img src="{}" width="100" height="100" style="object-fit:cover;" />', obj.passport_size.url)
         return "-"
     image_tag.short_description = 'Passport Photo'
+
+
+@admin.register(LoanApplication)
+class LoanApplicationAdmin(admin.ModelAdmin):
+    list_display = ('applicant', 'business', 'amount_requested', 'decision', 'reviewed_by', 'reviewed_at')
+    list_filter = ('decision', 'reviewed_by')
+    search_fields = ('applicant__name', 'business__name')
+
+@admin.register(LoanExpenseItem)
+class LoanExpenseItemAdmin(admin.ModelAdmin):
+    list_display = ('loan_application', 'item', 'amount')

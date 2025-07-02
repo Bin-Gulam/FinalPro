@@ -57,7 +57,7 @@ export function SignUp() {
 
         {/* Logo */}
         <div className="flex justify-center">
-          <img src="/logo.png" alt="Logo" className="w-20 h-20 mb-3 rounded-full shadow-md" />
+          <img src="../../../images/logo.png" alt="Logo" className="w-20 h-20 mb-3 rounded-full shadow-md" />
         </div>
 
         {/* Form Title */}

@@ -25,7 +25,7 @@ urlpatterns = [
     path('', lambda request: HttpResponse("Welcome to my API!")),
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),  
-    # path('api-token-auth/', obtain_auth_token), 
+    path('api/', include('bank_app.urls')),
 ]
 
 if settings.DEBUG:

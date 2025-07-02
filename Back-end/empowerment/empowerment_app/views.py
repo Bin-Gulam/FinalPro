@@ -1,3 +1,5 @@
+from django.forms import ValidationError
+from bank_app.models import MockBankLoan
 from empowerment_app.models import *
 from empowerment_app.serializer import *
 from .models import *
@@ -10,6 +12,7 @@ from rest_framework.permissions import IsAuthenticated, SAFE_METHODS, BasePermis
 from .filters import ApplicantFilter  
 from django.core.mail import send_mail
 from rest_framework import status
+
 
 
 # === Utility Function: Shared Bank Verification ===
@@ -32,7 +35,6 @@ def perform_bank_verification(applicant):
 
     applicant.save(update_fields=["is_verified_by_bank", "bank_status"])
     return applicant.bank_status
-
 
 # === Applicant View ===
 class ApplicantViewSet(viewsets.ModelViewSet):
@@ -86,15 +88,17 @@ class ApplicantViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Applicant not found."}, status=404)
 
 # === Business View ===
+
 class BusinessViewSet(viewsets.ModelViewSet):
     queryset = Business.objects.all()
     serializer_class = BusinessSerializer
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
+        # Let serializer handle applicant assignment
         business = serializer.save()
-        applicant = business.applicant
 
+        applicant = business.applicant
         if applicant.is_verified_by_sheha:
             perform_bank_verification(applicant)
 
@@ -119,7 +123,6 @@ class RepaymentViewSet(viewsets.ModelViewSet):
     serializer_class = RepaymentSerializer
     permission_classes = [IsAuthenticated]
 
-
 # === Notification View ===
 class NotificationViewSet(viewsets.ModelViewSet):
     queryset = Notification.objects.all()
@@ -127,9 +130,8 @@ class NotificationViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
         return Notification.objects.filter(
-            sheha__user=user,
+            sheha__user=self.request.user,
             is_verified_by_sheha=False
         ).order_by('-created_at')
 
@@ -145,20 +147,22 @@ class NotificationViewSet(viewsets.ModelViewSet):
         applicant.is_verified = True
         applicant.save(update_fields=["is_verified_by_sheha", "is_verified"])
 
-        # ✅ Auto bank verification
+        # Trigger centralized bank verification
         bank_status = perform_bank_verification(applicant)
 
+        # Send email update
         if applicant.user.email:
-            status_msg = {
+            status_map = {
                 'verified': 'approved',
                 'rejected': 'rejected due to existing loan',
                 'no business found': 'rejected (no business info)'
-            }.get(bank_status, 'status unknown')
+            }
+            msg = status_map.get(bank_status, 'status unknown')
 
             send_mail(
                 subject='Application Status',
-                message=f'Dear {applicant.name}, your application was approved by the Sheha. Bank verification: {status_msg}.',
-                from_email='noreply@yourdomain.com',
+                message=f'Dear {applicant.name}, your application was approved by the Sheha. Bank verification: {msg}.',
+                from_email='noreply@yourdomain.com', 
                 recipient_list=[applicant.user.email],
                 fail_silently=True,
             )
@@ -167,53 +171,6 @@ class NotificationViewSet(viewsets.ModelViewSet):
             'status': 'Sheha verification complete.',
             'bank_status': bank_status,
         }, status=status.HTTP_200_OK)
-
-
-# === Bank Loan View ===
-class MockBankLoanViewSet(viewsets.ModelViewSet):
-    queryset = MockBankLoan.objects.all()
-    serializer_class = MockBankLoanSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        user = self.request.user
-        return Notification.objects.filter(sheha__user=user).order_by('-created_at')
-
-    # Optional manual override
-    @action(detail=True, methods=['post'])
-    def verify(self, request, pk=None):
-        notification = self.get_object()
-        notification.is_read = True
-        notification.is_verified_by_sheha = True
-        notification.save()
-
-        applicant = notification.applicant
-        applicant.is_verified_by_sheha = True
-        applicant.save(update_fields=["is_verified_by_sheha"])
-
-        # 🔁 Use shared function
-        bank_status = perform_bank_verification(applicant)
-
-        if applicant.user.email:
-            status_msg = {
-                'verified': 'approved',
-                'rejected': 'rejected due to existing bank loan',
-                'no business found': 'rejected (no business info)'
-            }.get(bank_status, 'status unknown')
-
-            send_mail(
-                subject='Loan Application Status',
-                message=f'Dear {applicant.name}, your application was approved by the Sheha. Bank verification result: {status_msg}.',
-                from_email='noreply@yourdomain.com',
-                recipient_list=[applicant.user.email],
-                fail_silently=True,
-            )
-
-        return Response({
-            'status': 'Sheha verification complete.',
-            'bank_status': bank_status,
-        }, status=status.HTTP_200_OK)
-
 
 # === Admin/Read-Only Permission ===
 class IsAdminOrReadOnly(BasePermission):
@@ -221,3 +178,41 @@ class IsAdminOrReadOnly(BasePermission):
         if request.method in SAFE_METHODS:
             return request.user and request.user.is_authenticated
         return request.user and request.user.is_staff
+    
+# =======LOANS=========
+class LoanTypeViewSet(viewsets.ReadOnlyModelViewSet): 
+    queryset = LoanType.objects.all()
+    serializer_class = LoanTypeSerializer
+    permission_classes = [IsAuthenticated]
+    
+
+class LoanApplicationViewSet(viewsets.ModelViewSet):
+    queryset = LoanApplication.objects.all()
+    serializer_class = LoanApplicationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        application = serializer.save()  # Save with default 'pending' status
+        return Response(self.get_serializer(application).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'], url_path='approve')
+    def approve(self, request, pk=None):
+        application = self.get_object()
+        application.decision = 'approved'
+        application.system_comment = request.data.get('comment', 'Approved by loan officer')
+        application.reviewed_by = request.user
+        application.reviewed_at = timezone.now()
+        application.save()
+        return Response({'status': 'approved', 'application_id': application.id})
+
+    @action(detail=True, methods=['post'], url_path='reject')
+    def reject(self, request, pk=None):
+        application = self.get_object()
+        application.decision = 'rejected'
+        application.system_comment = request.data.get('comment', 'Rejected by loan officer')
+        application.reviewed_by = request.user
+        application.reviewed_at = timezone.now()
+        application.save()
+        return Response({'status': 'rejected', 'application_id': application.id})

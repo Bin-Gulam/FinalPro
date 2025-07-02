@@ -12,17 +12,18 @@ router.register(r'businesses', BusinessViewSet)
 router.register(r'shehas', ShehaViewSet)
 router.register(r'loans', LoanViewSet)
 router.register(r'loan-officers', LoanOfficerViewSet)
-router.register(r'repayments', RepaymentViewSet)
-router.register(r'users', UserViewSet)  
+router.register(r'repayments', RepaymentViewSet) 
 router.register(r'notifications', NotificationViewSet, basename='notications')
-router.register(r'bank-loans', MockBankLoanViewSet, basename='bank-loans')
+router.register(r'users', UserViewSet, basename='user')
 router.register(r'auth', AuthViewSet, basename='auth')
+router.register(r'loan-applications', LoanApplicationViewSet, basename='loan-application')
+router.register(r'loan-types', LoanTypeViewSet, basename='loan-type')
 
 urlpatterns = [
     path('', include(router.urls)),  
 
     # Auth endpoints (login/register)
-    path('login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('login/', CustomLoginView.as_view(), name='custom_login'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     # path('register/', RegisterView.as_view(), name='register'),
     
