@@ -85,7 +85,7 @@ export default function ApplicantManagement() {
   const handleGenerateReport = () => {
     const doc = new jsPDF();
 
-    const logoPath = `${window.location.origin}/logo192.png`;
+    const logoPath = `${window.location.origin}../../../images/logo192.png`;
     const img = new Image();
     img.src = logoPath;
 

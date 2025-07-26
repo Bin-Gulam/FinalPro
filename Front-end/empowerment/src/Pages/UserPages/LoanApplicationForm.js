@@ -10,10 +10,11 @@ const LoanApplicationForm = () => {
     amount_requested: '',
     purpose: '',
     repayment_period: '',
-    business_overview: '',
-    market_analysis: '',
-    financial_info: '',
-    growth_strategy: '',
+    who_are_your_customers: '',
+    current_customers: '',
+    new_customers_per_month: '',
+    monthly_sales: '',
+    monthly_expenses: '',
     expenses: [],
   });
 
@@ -148,6 +149,7 @@ const LoanApplicationForm = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Applicant & Business Select */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block font-medium mb-1">Applicant:</label>
@@ -159,21 +161,91 @@ const LoanApplicationForm = () => {
             </div>
           </div>
 
+          {/* Amount & Repayment */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input type="number" name="amount_requested" placeholder="Amount Requested" value={formData.amount_requested} onChange={handleInputChange} className="p-2 border rounded w-full" required />
             <input type="number" name="repayment_period" placeholder="Repayment Period (months)" value={formData.repayment_period} onChange={handleInputChange} className="p-2 border rounded w-full" required />
           </div>
 
-          <textarea name="purpose" placeholder="Purpose" value={formData.purpose} onChange={handleInputChange} className="w-full p-2 border rounded" required />
+          {/* Purpose */}
+          <div>
+            <label className="block font-semibold mb-1">What is the purpose of the loan?</label>
+            <textarea
+              name="purpose"
+              value={formData.purpose}
+              onChange={handleInputChange}
+              className="w-full p-2 border rounded"
+              placeholder="Explain why you're requesting this loan"
+              required
+            />
+          </div>
 
-          <textarea name="business_overview" placeholder="Business Overview" value={formData.business_overview} onChange={handleInputChange} className="w-full p-2 border rounded" required />
+          {/* New Customer-Related Fields */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block font-semibold mb-1">Who are your customers?</label>
+              <input
+                type="text"
+                name="who_are_your_customers"
+                value={formData.who_are_your_customers}
+                onChange={handleInputChange}
+                className="w-full p-2 border rounded"
+                placeholder="Describe your customer base"
+              />
+            </div>
 
-          <textarea name="market_analysis" placeholder="Market Analysis" value={formData.market_analysis} onChange={handleInputChange} className="w-full p-2 border rounded" required />
+            <div>
+              <label className="block font-semibold mb-1">How many current customers do you have?</label>
+              <input
+                type="number"
+                name="current_customers"
+                value={formData.current_customers}
+                onChange={handleInputChange}
+                className="w-full p-2 border rounded"
+                placeholder="e.g., 200"
+              />
+            </div>
 
-          <textarea name="financial_info" placeholder="Financial Info" value={formData.financial_info} onChange={handleInputChange} className="w-full p-2 border rounded" required />
+            <div>
+              <label className="block font-semibold mb-1">How many new customers per month?</label>
+              <input
+                type="number"
+                name="new_customers_per_month"
+                value={formData.new_customers_per_month}
+                onChange={handleInputChange}
+                className="w-full p-2 border rounded"
+                placeholder="e.g., 15"
+              />
+            </div>
 
-          <textarea name="growth_strategy" placeholder="Growth Strategy" value={formData.growth_strategy} onChange={handleInputChange} className="w-full p-2 border rounded" required />
+            <div>
+              <label className="block font-semibold mb-1">Average monthly sales (TZS)</label>
+              <input
+                type="number"
+                step="0.01"
+                name="monthly_sales"
+                value={formData.monthly_sales}
+                onChange={handleInputChange}
+                className="w-full p-2 border rounded"
+                placeholder="e.g., 500000.00"
+              />
+            </div>
 
+            <div>
+              <label className="block font-semibold mb-1">Average monthly expenses (TZS)</label>
+              <input
+                type="number"
+                step="0.01"
+                name="monthly_expenses"
+                value={formData.monthly_expenses}
+                onChange={handleInputChange}
+                className="w-full p-2 border rounded"
+                placeholder="e.g., 200000.00"
+              />
+            </div>
+          </div>
+
+          {/* Expenses */}
           <div>
             <label className="font-semibold">Add Expense</label>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -193,6 +265,7 @@ const LoanApplicationForm = () => {
             </ul>
           </div>
 
+          {/* Submit Button */}
           <button type="submit" className="w-full px-4 py-3 bg-green-600 text-white rounded hover:bg-green-700">Submit Application</button>
         </form>
       </div>

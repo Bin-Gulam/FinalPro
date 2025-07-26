@@ -151,10 +151,11 @@ class LoanApplication(models.Model):
     amount_requested = models.DecimalField(max_digits=12, decimal_places=2)
     purpose = models.TextField()
     repayment_period = models.PositiveIntegerField()
-    business_overview = models.TextField()
-    market_analysis = models.TextField()
-    financial_info = models.TextField()
-    growth_strategy = models.TextField()
+    who_are_your_customers = models.CharField(max_length=255, null=True, blank=True)
+    current_customers = models.PositiveIntegerField(null=True, blank=True)
+    new_customers_per_month = models.PositiveIntegerField(null=True, blank=True)
+    monthly_sales = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    monthly_expenses = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     plan_attachment = models.FileField(upload_to='plans/', blank=True, null=True)
     
     # Review fields

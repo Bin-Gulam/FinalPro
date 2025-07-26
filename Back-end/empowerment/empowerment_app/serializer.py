@@ -23,10 +23,11 @@ class CustomUserCreateSerializer(serializers.ModelSerializer):
 
 
 class ApplicantSerializer(serializers.ModelSerializer):
+    
     class Meta:
         model = Applicant
         fields = '__all__'  
-        read_only_fields = ['user', 'sheha'] 
+        read_only_fields = ['user','sheha'] 
 
         extra_kwargs = {
             'sheha': {'required': False, 'allow_null': True},
@@ -189,20 +190,26 @@ class LoanExpenseItemSerializer(serializers.ModelSerializer):
         model = LoanExpenseItem
         exclude = ['loan_application'] 
 
-    
 class LoanApplicationSerializer(serializers.ModelSerializer):
     expenses = LoanExpenseItemSerializer(many=True)
+
+    applicant = ApplicantSerializer(read_only=True)
+    business = BusinessSerializer(read_only=True)
+    loan_type_name = serializers.CharField(source='loan_type.name', read_only=True)
+    ward = serializers.CharField(source='applicant.ward', read_only=True)
+    sheha_name = serializers.CharField(source='applicant.sheha.name', read_only=True)
     applicant_name = serializers.CharField(source='applicant.name', read_only=True)
-    business_name = serializers.CharField(source='business.name', read_only=True)
+    business_name = serializers.CharField(source='business.business_name', read_only=True)
 
     class Meta:
         model = LoanApplication
         fields = '__all__'
+        read_only_fields = ['applicant']
 
     def validate(self, data):
         business = data.get('business')
         requested = data.get('amount_requested')
-        
+
         if business and requested:
             max_allowed = business.anual_income * Decimal('0.7')
             if requested > max_allowed:
@@ -210,10 +217,24 @@ class LoanApplicationSerializer(serializers.ModelSerializer):
                     'amount_requested': f"Requested amount exceeds 70% of business income ({max_allowed})."
                 })
         return data
-
     def create(self, validated_data):
+        request = self.context['request']
+        user = request.user
+        
+        # 🔍 Find the applicant for the current user
+        applicant = Applicant.objects.filter(user=user).first()
+        if not applicant:
+            raise serializers.ValidationError("Hakuna profaili ya mwombaji inayohusishwa na mtumiaji huyu.")
+        
+        # 🔍 Find the business for this applicant
+        business = Business.objects.filter(applicant=applicant).first()
+        if not business:
+            raise serializers.ValidationError("Hakuna biashara iliyosajiliwa kwa mwombaji huyu.")
+        validated_data['applicant'] = applicant
+        validated_data['business'] = business
+        
         expenses_data = validated_data.pop('expenses', [])
         application = LoanApplication.objects.create(**validated_data)
         for exp in expenses_data:
             LoanExpenseItem.objects.create(loan_application=application, **exp)
-        return application
+            return application

@@ -16,6 +16,8 @@ import AdminDashboard from './Pages/AdminPages/AdminDashboard.js';
 import UserDashboard from './Pages/UserPages/UserDashboard.js';
 import LoanReviewPage from './Pages/UserPages/LoanRivewPage.js';
 import LoanTypeCards from './Pages/UserPages/LoanTypes.js';
+import AcceptedApplicants from './Pages/AdminPages/ApprovedLoanApplications.js';
+import RejectedApplications from './Pages/AdminPages/RejectedApplications.js';
 
 function App() {
   return (
@@ -33,6 +35,8 @@ function App() {
 
           {/* Admin Pages */}
           <Route path='admin-dashboard' element={<AdminDashboard/>}/>
+          <Route path='accepted' element={<AcceptedApplicants/>}/>
+          <Route path='rejected'element={<RejectedApplications/>}/>
           <Route path='applicant_list' element={<ApplicantManagement/>}/>
           <Route path='/shehas' element={<ShehaManagement/>} />
           <Route path='/loanOfficer' element={<LoanOfficer/>}/>

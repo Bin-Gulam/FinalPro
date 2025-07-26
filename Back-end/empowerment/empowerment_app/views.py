@@ -192,9 +192,10 @@ class LoanApplicationViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        # ✅ Pass request to serializer context
+        serializer = self.get_serializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        application = serializer.save()  # Save with default 'pending' status
+        application = serializer.save()  # Applicant is set inside serializer
         return Response(self.get_serializer(application).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'], url_path='approve')
@@ -216,3 +217,7 @@ class LoanApplicationViewSet(viewsets.ModelViewSet):
         application.reviewed_at = timezone.now()
         application.save()
         return Response({'status': 'rejected', 'application_id': application.id})
+    
+class LoanReviewViewSet(viewsets.ModelViewSet):
+    queryset = LoanApplication.objects.all()
+    serializer_class = LoanApplicationSerializer

@@ -17,12 +17,12 @@ const AdminDashboard = () => {
   });
 
   useEffect(() => {
-    const fetchApplicants = async () => {
+    const fetchLoanApplications = async () => {
       try {
         const token = localStorage.getItem('access_token');
-        console.log("Access token:", token);
+        if (!token) throw new Error('No access token found');
 
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/applicants/`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/loan-applications/`, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -34,20 +34,37 @@ const AdminDashboard = () => {
         }
 
         const data = await response.json();
-        console.log("Applicants fetched:", data);
 
-        if (data.results) {
-          setStats(prev => ({ ...prev, total: data.count }));
-        } else {
-          setStats(prev => ({ ...prev, total: data.length }));
-        }
+        const applications = data.results || data;
+
+        // Count total applications
+        const totalApplications = data.count || applications.length;
+
+        // Count approved applications
+        const approvedApplications = applications.filter(app =>
+          app.decision?.toLowerCase() === 'approved'
+        ).length;
+
+        // Count rejected applications
+        const rejectedApplications = applications.filter(app =>
+          app.decision?.toLowerCase() === 'rejected'
+        ).length;
+
+        setStats(prev => ({
+          ...prev,
+          total: totalApplications,
+          approved: approvedApplications,
+          rejected: rejectedApplications,
+          percentage: totalApplications > 0 ? Math.round((approvedApplications / totalApplications) * 100) : 0,
+        }));
       } catch (error) {
-        console.error('Error fetching applicants:', error);
+        console.error('Error fetching loan applications:', error);
       }
     };
 
-    fetchApplicants();
+    fetchLoanApplications();
 
+    // Keep your existing axios call if needed for other stats (optional)
     axios.get('/api/admin-stats/')
       .then(res => setStats(prev => ({ ...prev, ...res.data })))
       .catch(err => console.error(err));
@@ -75,19 +92,22 @@ const AdminDashboard = () => {
         <main className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <div
-              onClick={() => navigate('/applicant_list')}
+              onClick={() => navigate('/accepted')}
               className="cursor-pointer bg-white p-4 rounded-xl shadow-md text-center transform transition duration-300 hover:scale-105"
             >
-              <h3 className="text-lg font-semibold">Total Applicants</h3>
+              <h3 className="text-lg font-semibold">Total Applications</h3>
               <p className="text-3xl text-blue-600">{stats.total}</p>
             </div>
-            <div className="bg-white p-4 rounded-xl shadow-md text-center transform transition duration-300 hover:scale-105">
-              <h3 className="text-lg font-semibold">Beneficiaries</h3>
-              <p className="text-3xl text-green-600">{stats.approved}</p>
+           <div onClick={() => navigate('/accepted')}
+           className="cursor-pointer bg-white p-4 rounded-xl shadow-md text-center transform transition duration-300 hover:scale-105">
+            <h3 className="text-lg font-semibold">Beneficiaries</h3>
+            <p className="text-3xl text-green-600">{stats.approved}</p>
             </div>
-            <div className="bg-white p-4 rounded-xl shadow-md text-center transform transition duration-300 hover:scale-105">
-              <h3 className="text-lg font-semibold">Rejected</h3>
-              <p className="text-3xl text-red-600">{stats.rejected}</p>
+
+            <div onClick={() => navigate('/rejected')}
+           className="cursor-pointer bg-white p-4 rounded-xl shadow-md text-center transform transition duration-300 hover:scale-105">
+            <h3 className="text-lg font-semibold">Rejected</h3>
+            <p className="text-3xl text-green-600">{stats.rejected}</p>
             </div>
             <div className="bg-white p-4 rounded-xl shadow-md text-center transform transition duration-300 hover:scale-105">
               <h3 className="text-lg font-semibold">% Approved</h3>
