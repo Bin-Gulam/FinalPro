@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'channels',
     'django_extensions',
     'bank_app',
+    'leaflet',
 ]
 
 MIDDLEWARE = [
@@ -120,7 +121,7 @@ WSGI_APPLICATION = 'women_youth_empowerment.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'NAME': 'empowerment',
         'USER': 'gulam',
         'PASSWORD': '12345678',
@@ -213,6 +214,7 @@ EMAIL_HOST_USER = 'bingulam09@gmail.com'
 EMAIL_HOST_PASSWORD = 'mbol fbvx phat oxaw'  
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
+GDAL_LIBRARY_PATH = '/usr/lib/x86_64-linux-gnu/libgdal.so.36'
 
 # # ================
 # # Forgot via email

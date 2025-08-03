@@ -221,3 +221,4 @@ class LoanApplicationViewSet(viewsets.ModelViewSet):
 class LoanReviewViewSet(viewsets.ModelViewSet):
     queryset = LoanApplication.objects.all()
     serializer_class = LoanApplicationSerializer
+    permission_classes = [IsAuthenticated]

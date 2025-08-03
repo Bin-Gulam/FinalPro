@@ -1,8 +1,10 @@
+// --- Updated ApprovedLoanApplications.js ---
+
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import AdminNavbar from '../Components/AdminNavbar';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable'; 
+import 'jspdf-autotable';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -17,7 +19,6 @@ const ApprovedLoanApplications = () => {
         if (!token) throw new Error('No access token found');
 
         const headers = { Authorization: `Bearer ${token}` };
-
         const response = await axios.get(`${API_URL}/loan-applications/`, { headers });
 
         const dataArray = Array.isArray(response.data)
@@ -38,15 +39,7 @@ const ApprovedLoanApplications = () => {
   }, []);
 
   const downloadCSV = (data) => {
-    const headers = [
-      'Applicant',
-      'Ward',
-      'Business Name',
-      'Business Location',
-      'Loan Type',
-      'Amount Requested',
-      'Sheha Name'
-    ];
+    const headers = ['Applicant', 'Ward', 'Business Name', 'Business Location', 'Loan Type', 'Amount Requested', 'Sheha Name'];
 
     const rows = data.map(app => [
       app.applicant?.name || 'Haijajazwa',
@@ -72,33 +65,67 @@ const ApprovedLoanApplications = () => {
   };
 
   const generatePDF = () => {
-  const doc = new jsPDF();
+    const doc = new jsPDF();
+    doc.text('Ripoti ya Mikopo Iliyo Kubaliwa', 105, 20, null, null, 'center');
 
-  doc.text('Ripoti ya Mikopo Iliyo Kubaliwa', 105, 20, null, null, 'center');
+    const tableColumn = ['Applicant', 'Ward', 'Business', 'Location', 'Loan Type', 'Amount', 'Sheha'];
+    const tableRows = applications.map(app => [
+      app.applicant?.name || 'Haijajazwa',
+      app.applicant?.ward || 'Haijajazwa',
+      app.business?.name || 'Haijajazwa',
+      app.business?.location || 'Haijajazwa',
+      app.loan_type_name || 'Haijajazwa',
+      app.amount_requested?.toLocaleString() || 'Haijajazwa',
+      app.sheha_name || 'Haijajazwa'
+    ]);
 
-  const tableColumn = [
-    'Applicant', 'Ward', 'Business', 'Location',
-    'Loan Type', 'Amount', 'Sheha'
-  ];
+    doc.autoTable({
+      head: [tableColumn],
+      body: tableRows,
+      startY: 40,
+      styles: { fontSize: 9 }
+    });
 
-  const tableRows = applications.map(app => [
-    app.applicant?.name || 'Haijajazwa',
-    app.applicant?.ward || 'Haijajazwa',
-    app.business?.name || 'Haijajazwa',
-    app.business?.location || 'Haijajazwa',
-    app.loan_type_name || 'Haijajazwa',
-    app.amount_requested?.toLocaleString() || 'Haijajazwa',
-    app.sheha_name || 'Haijajazwa'
-  ]);
+    doc.save(`approved_loans_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
 
-  doc.autoTable({
-    head: [tableColumn],
-    body: tableRows,
-    startY: 40,
-    styles: { fontSize: 9 }
-  });
+ const openLocationOnMap = (app) => {
+  let pointStr = app.business?.location;
+  if (!pointStr || !pointStr.includes('POINT')) {
+    alert('Business location haipo au haijajazwa.');
+    return;
+  }
 
-  doc.save(`approved_loans_${new Date().toISOString().split('T')[0]}.pdf`);
+  try {
+    console.log('Raw POINT string:', pointStr);
+
+    // Ondoa "SRID=4326;" kama ipo
+    if (pointStr.includes(';')) {
+      pointStr = pointStr.split(';')[1]; // "POINT (lng lat)"
+    }
+
+    const coords = pointStr
+      .replace('POINT(', '')
+      .replace('POINT (', '') // extra space after POINT if any
+      .replace(')', '')
+      .trim()
+      .split(' ')
+      .map(parseFloat);
+
+    const [lng, lat] = coords;
+
+    if (isNaN(lat) || isNaN(lng)) {
+      throw new Error('Invalid coordinates');
+    }
+
+    console.log("Opening map for coords:", lat, lng);
+
+    const mapUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+    window.open(mapUrl, '_blank');
+  } catch (error) {
+    console.error('Error opening map:', error);
+    alert('Imeshindikana kufungua ramani.');
+  }
 };
 
   return (
@@ -106,24 +133,11 @@ const ApprovedLoanApplications = () => {
       <AdminNavbar />
       <div className="p-6 overflow-x-auto">
         <h2 className="text-2xl font-bold mb-4">Orodha ya Maombi ya Mikopo Iliyo Kubaliwa</h2>
-
         {error && <p className="text-red-600 mb-4">{error}</p>}
-
         <div className="mb-4 flex justify-between">
-          <button
-            onClick={() => downloadCSV(applications)}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            Pakua CSV
-          </button>
-          <button
-            onClick={generatePDF}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Pakua PDF
-          </button>
+          <button onClick={() => downloadCSV(applications)} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Pakua CSV</button>
+          <button onClick={generatePDF} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Pakua PDF</button>
         </div>
-
         <table className="w-full border border-gray-300 text-sm">
           <thead className="bg-gray-100">
             <tr>
@@ -135,14 +149,13 @@ const ApprovedLoanApplications = () => {
               <th className="border px-4 py-2">Loan Type</th>
               <th className="border px-4 py-2">Amount Requested</th>
               <th className="border px-4 py-2">Sheha Name</th>
+              <th className="border px-4 py-2">Actions</th>
             </tr>
           </thead>
           <tbody>
             {applications.length === 0 ? (
               <tr>
-                <td colSpan="8" className="text-center p-4">
-                  Hakuna maombi ya mkopo yaliyokubaliwa.
-                </td>
+                <td colSpan="9" className="text-center p-4">Hakuna maombi ya mkopo yaliyokubaliwa.</td>
               </tr>
             ) : (
               applications.map((app, index) => (
@@ -155,6 +168,11 @@ const ApprovedLoanApplications = () => {
                   <td className="border px-4 py-2">{app.loan_type_name || 'Haijajazwa'}</td>
                   <td className="border px-4 py-2">{app.amount_requested?.toLocaleString() || 'Haijajazwa'}</td>
                   <td className="border px-4 py-2">{app.sheha_name || 'Haijajazwa'}</td>
+                  <td className="border px-4 py-2">
+                    <button onClick={() => openLocationOnMap(app)} className="text-blue-600 underline hover:text-blue-800">
+                      View Location
+                    </button>
+                  </td>
                 </tr>
               ))
             )}

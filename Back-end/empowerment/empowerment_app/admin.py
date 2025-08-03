@@ -5,6 +5,7 @@ from empowerment_app.models import *
 from empowerment_app.models import CustomUser as User
 from .models import Applicant, Loan
 from django.utils.html import format_html
+from leaflet.admin import LeafletGeoAdmin
 
 # Register custom user and other models
 admin.site.register(CustomUser, UserAdmin)
@@ -59,10 +60,10 @@ class ApplicantAdmin(admin.ModelAdmin):
     list_filter = ('gender', 'marital_status', 'region', 'district')
 
 @admin.register(Business)
-class BusinessAdmin(admin.ModelAdmin):
+class BusinessAdmin(LeafletGeoAdmin):
     autocomplete_fields = ('applicant',) 
     list_display = ('id', 'name', 'bank_no', 'location', 'type', 'anual_income', 'applicant')
-    search_fields = ('name', 'bank_no', 'location')
+    search_fields = ('name', 'bank_no')
     list_filter = ('type',)
 
 @admin.register(LoanOfficer)

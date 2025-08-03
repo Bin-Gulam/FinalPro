@@ -2,6 +2,7 @@ from decimal import Decimal
 from rest_framework import serializers
 from .models import *
 from .models import CustomUser
+from django.contrib.gis.geos import Point
 from empowerment_app.models import CustomUser as User
 
 # ================
@@ -38,21 +39,96 @@ class ApplicantSerializer(serializers.ModelSerializer):
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
 
+# class BusinessSerializer(serializers.ModelSerializer):
+#     applicant_name = serializers.CharField(source='applicant.name', read_only=True)
+
+#     class Meta:
+#         model = Business
+       
+#         exclude = ['applicant']
+
+#     def create(self, validated_data):
+#         user = self.context['request'].user
+#         applicant = Applicant.objects.filter(user=user).first()
+#         if not applicant:
+#             raise serializers.ValidationError("No applicant related to the current user.")
+#         validated_data['applicant'] = applicant
+#         return super().create(validated_data)
+
+#     def validate_bank_no(self, value):
+#         user = self.context['request'].user
+#         applicant = Applicant.objects.filter(user=user).first()
+#         if not applicant:
+#             raise serializers.ValidationError("Applicant profile not found.")
+
+#         # Check uniqueness per applicant
+#         if self.instance is None or self.instance.bank_no != value:
+#             if Business.objects.filter(applicant=applicant, bank_no=value).exists():
+#                 raise serializers.ValidationError("You have already registered a business with this bank number.")
+#         return value
+
+from rest_framework import serializers
+from django.contrib.gis.geos import GEOSGeometry, Point
+from .models import Business, Applicant
+
 class BusinessSerializer(serializers.ModelSerializer):
     applicant_name = serializers.CharField(source='applicant.name', read_only=True)
 
+    # Allow frontend to send latitude/longitude or a POINT string
+    latitude = serializers.FloatField(write_only=True, required=False)
+    longitude = serializers.FloatField(write_only=True, required=False)
+    location = serializers.CharField(required=False)
+
     class Meta:
         model = Business
-       
         exclude = ['applicant']
+        extra_kwargs = {
+            'location': {'read_only': True},  # prevent direct overwrite unless processed
+        }
+
+    def validate(self, data):
+        lat = data.pop('latitude', None)
+        lng = data.pop('longitude', None)
+        point_str = data.get('location', None)
+
+        # Handle location via lat/lng
+        if lat is not None and lng is not None:
+            data['location'] = Point(lng, lat)
+        elif point_str and isinstance(point_str, str) and point_str.startswith("POINT"):
+            try:
+                data['location'] = GEOSGeometry(point_str)
+            except Exception:
+                raise serializers.ValidationError({"location": "Invalid POINT format."})
+        else:
+            raise serializers.ValidationError({
+                "location": "You must provide either latitude & longitude or a valid POINT string."
+            })
+
+        return data
 
     def create(self, validated_data):
         user = self.context['request'].user
         applicant = Applicant.objects.filter(user=user).first()
         if not applicant:
-            raise serializers.ValidationError("No applicant related to the current user.")
+            raise serializers.ValidationError("No applicant profile linked to current user.")
         validated_data['applicant'] = applicant
         return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        # Allow updates to location
+        if 'latitude' in self.initial_data and 'longitude' in self.initial_data:
+            try:
+                lat = float(self.initial_data.get('latitude'))
+                lng = float(self.initial_data.get('longitude'))
+                validated_data['location'] = Point(lng, lat)
+            except Exception:
+                raise serializers.ValidationError({"location": "Invalid lat/lng values."})
+        elif 'location' in self.initial_data and self.initial_data['location'].startswith("POINT"):
+            try:
+                validated_data['location'] = GEOSGeometry(self.initial_data['location'])
+            except Exception:
+                raise serializers.ValidationError({"location": "Invalid POINT format."})
+        return super().update(instance, validated_data)
 
     def validate_bank_no(self, value):
         user = self.context['request'].user
@@ -60,7 +136,6 @@ class BusinessSerializer(serializers.ModelSerializer):
         if not applicant:
             raise serializers.ValidationError("Applicant profile not found.")
 
-        # Check uniqueness per applicant
         if self.instance is None or self.instance.bank_no != value:
             if Business.objects.filter(applicant=applicant, bank_no=value).exists():
                 raise serializers.ValidationError("You have already registered a business with this bank number.")

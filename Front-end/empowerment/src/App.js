@@ -3,8 +3,6 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Login from './Pages/Login/Login';
 import SignUp from './Pages/Login/SignUp';
 import ResetPassword from './Pages/Login/ResetPassword';
-// import Dashboard from './Pages/Components/Dashboard';
-// import DashboardLayout from './Pages/Components/DashboardLayout'; 
 import ApplicationForm from './Pages/UserPages/ApplicationForm.js';
 import NotificationList from './Pages/UserPages/NotificationList.js';
 import LoanApplicationForm from './Pages/UserPages/LoanApplicationForm.js';
@@ -26,14 +24,9 @@ function App() {
         {/* Public Routes */}
         <Route path='/' element={<Login />} />
         <Route path='/register' element={<SignUp />} />
-        <Route path='/resetPassword' element={<ResetPassword />} />
+        <Route path='/resetPassword' element={<ResetPassword />} />          
 
-        {/* Protected Routes (With Sidebar Layout) */}
-        {/* <Route element={<DashboardLayout />}>
-          <Route path='/home' element={<Dashboard />} /> */}
-          
-
-          {/* Admin Pages */}
+          {/* Admin Pages */}  
           <Route path='admin-dashboard' element={<AdminDashboard/>}/>
           <Route path='accepted' element={<AcceptedApplicants/>}/>
           <Route path='rejected'element={<RejectedApplications/>}/>

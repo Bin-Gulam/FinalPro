@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import *
 from django.core.validators import RegexValidator
 from women_youth_empowerment import settings
-
+from django.contrib.gis.db import models as geomodels
 
 # Custom user model extending AbstractUser
 class CustomUser(AbstractUser):
@@ -70,10 +70,11 @@ class Business(models.Model):
     applicant = models.ForeignKey(Applicant, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     registration_number = models.CharField(max_length=100, blank=True, null=True)
-    location = models.CharField(max_length=100)
+    location = geomodels.PointField(geography=True, null=True, blank=True)
     type = models.CharField(max_length=50)
     anual_income = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     bank_no = models.CharField(max_length=20, )
+
 
     class Meta:
         unique_together = ('applicant', 'bank_no')
